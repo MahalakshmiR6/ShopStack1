@@ -1,0 +1,80 @@
+package com.shopstack.shopstack.controller;
+
+import com.shopstack.shopstack.dto.LoginRequest;
+import com.shopstack.shopstack.dto.LoginResponse;
+import com.shopstack.shopstack.dto.RegisterRequest;
+import com.shopstack.shopstack.model.User;
+import com.shopstack.shopstack.repository.UserRepository;
+import com.shopstack.shopstack.service.AuthService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final AuthService authService;
+    private final UserRepository userRepository;
+
+    public AuthController(AuthService authService, UserRepository userRepository) {
+        this.authService = authService;
+        this.userRepository = userRepository;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
+        try {
+            User user = authService.register(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "User registered successfully!");
+            response.put("userId", user.getId());
+            response.put("email", user.getEmail());
+            response.put("role", user.getRole());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest request) {
+        try {
+            LoginResponse response = authService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid email or password!");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", user.getId());
+        response.put("email", user.getEmail());
+        response.put("firstName", user.getFirstName());
+        response.put("lastName", user.getLastName());
+        response.put("role", user.getRole());
+        response.put("isActive", user.isActive());
+
+        return ResponseEntity.ok(response);
+    }
+}
