@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAllVendors, updateVendorStatus } from '../../api/vendors';
 import { getPendingProducts, approveProduct } from '../../api/products';
-import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X } from 'lucide-react';
+import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [vendors, setVendors] = useState([]);
@@ -195,24 +195,39 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4">Vendor</th>
                     <th className="px-6 py-4">Category</th>
                     <th className="px-6 py-4">Price</th>
+                    <th className="px-6 py-4">Rating</th>
                     <th className="px-6 py-4">Stock</th>
                     <th className="px-6 py-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-glass-border/40">
-                  {pendingProducts.map((p) => (
-                    <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="font-semibold text-text-primary">{p.name}</div>
-                          {p.brand && <div className="text-xs text-text-muted mt-0.5">{p.brand}</div>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-text-primary font-medium">{p.vendor?.storeName}</td>
-                      <td className="px-6 py-4 text-text-secondary">{p.category?.name || '—'}</td>
-                      <td className="px-6 py-4 font-bold text-text-primary">₹{parseFloat(p.price).toFixed(2)}</td>
-                      <td className="px-6 py-4 text-text-secondary">{p.stockQuantity}</td>
-                      <td className="px-6 py-4">
+                  {pendingProducts.map((p) => {
+                    const avgRating = p.reviews?.length
+                      ? (p.reviews.reduce((s, r) => s + r.rating, 0) / p.reviews.length).toFixed(1)
+                      : null;
+                    return (
+                      <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="font-semibold text-text-primary">{p.name}</div>
+                            {p.brand && <div className="text-xs text-text-muted mt-0.5">{p.brand}</div>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-text-primary font-medium">{p.vendor?.storeName}</td>
+                        <td className="px-6 py-4 text-text-secondary">{p.category?.name || '—'}</td>
+                        <td className="px-6 py-4 font-bold text-text-primary">₹{parseFloat(p.price).toFixed(2)}</td>
+                        <td className="px-6 py-4">
+                          {avgRating ? (
+                            <span className="flex items-center gap-1 text-xs font-bold text-accent-warning">
+                              <Star size={12} fill="currentColor" /> {avgRating}
+                              <span className="text-[10px] text-text-muted font-normal">({p.reviews.length})</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-text-muted">No ratings</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-text-secondary">{p.stockQuantity}</td>
+                        <td className="px-6 py-4">
                         <div className="flex gap-2 flex-wrap">
                           <button
                             className="inline-flex items-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
@@ -238,7 +253,8 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
             )}
