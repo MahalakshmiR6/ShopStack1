@@ -74,6 +74,7 @@ public class AuthController {
         response.put("lastName", user.getLastName());
         response.put("role", user.getRole());
         response.put("isActive", user.isActive());
+        response.put("profilePictureUrl", user.getProfilePictureUrl());
 
         return ResponseEntity.ok(response);
     }

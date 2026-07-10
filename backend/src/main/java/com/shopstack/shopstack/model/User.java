@@ -51,6 +51,9 @@ public class User {
     @Builder.Default
     private boolean isActive = true;
 
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

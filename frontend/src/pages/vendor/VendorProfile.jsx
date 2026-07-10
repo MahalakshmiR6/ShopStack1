@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getVendorProfile, updateVendorProfile } from '../../api/vendors';
+import { getVendorProfile, updateVendorProfile, updateAvatar } from '../../api/vendors';
 import { uploadProductImage } from '../../api/upload';
 import {
   Store,
@@ -28,9 +28,9 @@ function formatDate(dt) {
 }
 
 export default function VendorProfile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
-  const [avatar, setAvatar]               = useState(localStorage.getItem(`avatar_${user?.id}`) || '');
+  const avatar = user?.profilePictureUrl || '';
   const [profile, setProfile]             = useState(null);
   const [storeName, setStoreName]         = useState('');
   const [description, setDescription]     = useState('');
@@ -48,8 +48,8 @@ export default function VendorProfile() {
     try {
       const res = await uploadProductImage(file);
       const url = res.data.imageUrl;
-      setAvatar(url);
-      localStorage.setItem(`avatar_${user?.id}`, url);
+      await updateAvatar(url);
+      updateUser({ profilePictureUrl: url });
     } catch (err) {
       console.error("Failed to upload profile photo:", err);
     }

@@ -78,4 +78,17 @@ public class ProfileController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @PutMapping("/avatar")
+    public ResponseEntity<?> updateAvatar(@RequestBody Map<String, String> request) {
+        try {
+            User user = getCurrentUser();
+            String avatarUrl = request.get("avatarUrl");
+            user.setProfilePictureUrl(avatarUrl);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Profile picture updated successfully", "profilePictureUrl", avatarUrl));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

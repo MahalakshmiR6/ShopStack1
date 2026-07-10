@@ -17,6 +17,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { cartItems, removeFromCart, cartCount, cartSubtotal } = useCart();
   const navigate = useNavigate();
+
+  const avatar = user?.profilePictureUrl;
   
   // Dropdown states
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -203,18 +205,31 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-glass-border bg-glass backdrop-blur-md text-text-primary text-sm font-medium hover:border-accent-primary transition-all duration-300 select-none cursor-pointer"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center font-display font-bold text-xs text-white shrink-0">
-                    {user.firstName?.[0]}{user.lastName?.[0]}
-                  </div>
+                  {avatar ? (
+                    <img src={avatar} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-glass-border shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center font-display font-bold text-xs text-white shrink-0">
+                      {user.firstName?.[0]}{user.lastName?.[0]}
+                    </div>
+                  )}
                   <span className="hidden sm:inline">{user.firstName}</span>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 rounded-lg border border-glass-border bg-bg-secondary shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-4 py-3 border-b border-glass-border flex flex-col gap-0.5">
-                      <span className="font-semibold text-sm text-text-primary">{user.firstName} {user.lastName}</span>
-                      <span className="text-[10px] font-bold text-accent-primary uppercase tracking-wider">{user.role}</span>
+                    <div className="px-4 py-3 border-b border-glass-border flex items-center gap-3">
+                      {avatar ? (
+                        <img src={avatar} alt="Profile" className="w-10 h-10 rounded-full object-cover border border-glass-border shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center font-display font-bold text-xs text-white shrink-0">
+                          {user.firstName?.[0]}{user.lastName?.[0]}
+                        </div>
+                      )}
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="font-semibold text-sm text-text-primary truncate">{user.firstName} {user.lastName}</span>
+                        <span className="text-[10px] font-bold text-accent-primary uppercase tracking-wider">{user.role}</span>
+                      </div>
                     </div>
                     <Link to={getDashboardLink()} className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors" onClick={() => setDropdownOpen(false)}>
                       <LayoutDashboard size={15} /> Dashboard

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getCustomerProfile, updateCustomerProfile } from '../../api/vendors';
+import { getCustomerProfile, updateCustomerProfile, updateAvatar } from '../../api/vendors';
 import { uploadProductImage } from '../../api/upload';
 import { User, Phone, MapPin, CheckCircle2, AlertCircle, Camera } from 'lucide-react';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   
-  const [avatar, setAvatar] = useState(localStorage.getItem(`avatar_${user?.id}`) || '');
+  const avatar = user?.profilePictureUrl || '';
   const [phone, setPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
@@ -23,8 +23,8 @@ export default function Profile() {
     try {
       const res = await uploadProductImage(file);
       const url = res.data.imageUrl;
-      setAvatar(url);
-      localStorage.setItem(`avatar_${user?.id}`, url);
+      await updateAvatar(url);
+      updateUser({ profilePictureUrl: url });
     } catch (err) {
       console.error("Failed to upload profile photo:", err);
     }
