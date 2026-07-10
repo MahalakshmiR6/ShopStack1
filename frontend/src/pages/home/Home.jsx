@@ -318,60 +318,66 @@ export default function Home() {
         </section>
       )}
 
-      {/* Main content */}
-      <section id="products-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 items-start">
-        {/* Sidebar filters */}
-        <aside className="p-6 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-6 lg:sticky lg:top-24">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider border-b border-glass-border pb-3">
+      {/* Filters section */}
+      <section id="products-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col md:flex-row md:items-end justify-between gap-5">
+          {/* Header */}
+          <div className="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider shrink-0 pb-1.5 md:pb-3">
             <Filter size={15} /> Filters
-          </h3>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Category</label>
-            <select
-              className="w-full bg-bg-secondary border border-glass-border rounded-lg text-text-primary text-sm px-3.5 py-2.5 outline-none transition-colors duration-300 focus:border-accent-primary"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Price Range</label>
-            <div className="flex items-center gap-2">
-              <input
-                className="w-full bg-bg-secondary border border-glass-border rounded-lg text-text-primary text-sm px-3 py-2.5 outline-none transition-colors duration-300 focus:border-accent-primary placeholder-text-muted"
-                type="number"
-                placeholder="Min ₹"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                min={0}
-              />
-              <span className="text-text-muted text-xs">—</span>
-              <input
-                className="w-full bg-bg-secondary border border-glass-border rounded-lg text-text-primary text-sm px-3 py-2.5 outline-none transition-colors duration-300 focus:border-accent-primary placeholder-text-muted"
-                type="number"
-                placeholder="Max ₹"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                min={0}
-              />
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row md:items-center gap-4 flex-1 w-full">
+            {/* Category dropdown */}
+            <div className="flex flex-col gap-1.5 flex-1 w-full">
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Category</label>
+              <select
+                className="w-full bg-bg-secondary border border-glass-border rounded-lg text-text-primary text-sm px-3.5 py-2.5 outline-none transition-colors duration-300 focus:border-accent-primary"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Price range */}
+            <div className="flex flex-col gap-1.5 flex-1 w-full">
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Price Range</label>
+              <div className="flex items-center gap-2 w-full">
+                <input
+                  className="w-full bg-bg-secondary border border-glass-border rounded-lg text-text-primary text-sm px-3 py-2.5 outline-none transition-colors duration-300 focus:border-accent-primary placeholder-text-muted"
+                  type="number"
+                  placeholder="Min ₹"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  min={0}
+                />
+                <span className="text-text-muted text-xs">—</span>
+                <input
+                  className="w-full bg-bg-secondary border border-glass-border rounded-lg text-text-primary text-sm px-3 py-2.5 outline-none transition-colors duration-300 focus:border-accent-primary placeholder-text-muted"
+                  type="number"
+                  placeholder="Max ₹"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  min={0}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 mt-2">
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
             <button
-              className="w-full bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold py-3 rounded-lg shadow-md transition-all duration-300 cursor-pointer"
+              className="flex-1 md:flex-initial bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold px-5 py-3 rounded-lg shadow-md transition-all duration-300 cursor-pointer"
               onClick={fetchProducts}
             >
               Apply Filters
             </button>
             <button
-              className="w-full bg-transparent hover:bg-bg-tertiary border border-glass-border hover:border-text-secondary text-text-primary text-xs font-bold py-3 rounded-lg transition-colors duration-300 cursor-pointer"
+              className="flex-1 md:flex-initial bg-transparent hover:bg-bg-tertiary border border-glass-border hover:border-text-secondary text-text-primary text-xs font-bold px-5 py-3 rounded-lg transition-colors duration-300 cursor-pointer"
               onClick={() => {
                 setQuery(''); setSelectedCategory(''); setMinPrice(''); setMaxPrice('');
               }}
@@ -379,10 +385,13 @@ export default function Home() {
               Clear All
             </button>
           </div>
-        </aside>
+        </div>
+      </section>
 
+      {/* Main content */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Products grid */}
-        <main className="flex flex-col gap-6">
+        <main className="flex flex-col gap-6 w-full">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-text-primary">
               {query ? `Results for "${query}"` : 'All Products'}
@@ -391,8 +400,8 @@ export default function Home() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
                 <div key={i} className="h-80 rounded-xl border border-glass-border bg-glass/10 animate-pulse" />
               ))}
             </div>
@@ -403,7 +412,7 @@ export default function Home() {
               <p className="text-sm">Try adjusting your search filters</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((p) => (
                 <ProductCard key={p.id} product={p} onSelect={setSelectedProduct} />
               ))}
