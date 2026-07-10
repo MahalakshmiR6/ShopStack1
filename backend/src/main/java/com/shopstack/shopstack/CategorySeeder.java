@@ -35,7 +35,7 @@ public class CategorySeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("Checking and seeding default categories...");
+        // System.out.println("Checking and seeding default categories...");
 
         List<Category> defaultCategories = Arrays.asList(
                 Category.builder().name("Electronics").slug("electronics").build(),
