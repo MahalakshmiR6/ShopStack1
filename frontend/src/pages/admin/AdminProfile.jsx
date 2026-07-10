@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getAllVendors, updateVendorStatus } from '../../api/vendors';
+import { uploadProductImage } from '../../api/upload';
 import {
   Store,
   CheckCircle2,
@@ -14,6 +15,7 @@ import {
   Users,
   AlertCircle,
   RefreshCw,
+  Camera,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = ['ALL', 'APPROVED', 'PENDING_APPROVAL', 'REJECTED'];
@@ -32,6 +34,7 @@ function formatDate(dt) {
 export default function AdminProfile() {
   const { user } = useAuth();
 
+  const [avatar, setAvatar]               = useState(localStorage.getItem(`avatar_${user?.id}`) || '');
   const [vendors, setVendors]             = useState([]);
   const [filter, setFilter]               = useState('ALL');
   const [search, setSearch]               = useState('');
@@ -42,6 +45,19 @@ export default function AdminProfile() {
 
   // Inline edit state per vendor
   const [editState, setEditState]         = useState({}); // { [id]: { status, commissionRate } }
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const res = await uploadProductImage(file);
+      const url = res.data.imageUrl;
+      setAvatar(url);
+      localStorage.setItem(`avatar_${user?.id}`, url);
+    } catch (err) {
+      console.error("Failed to upload profile photo:", err);
+    }
+  };
 
   useEffect(() => {
     fetchVendors();
@@ -150,24 +166,52 @@ export default function AdminProfile() {
           </div>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { icon: Users,        label: 'Total Vendors',   value: total,    bg: 'bg-accent-primary/10 text-accent-primary' },
-            { icon: CheckCircle2, label: 'Approved',        value: approved, bg: 'bg-emerald-500/10 text-emerald-500' },
-            { icon: Clock,        label: 'Pending Review',  value: pending,  bg: 'bg-accent-warning/10 text-accent-warning' },
-            { icon: XCircle,      label: 'Rejected',        value: rejected, bg: 'bg-accent-danger/10 text-accent-danger' },
-          ].map(({ icon: Icon, label, value, bg }) => (
-            <div key={label} className="flex items-center gap-3 p-4 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${bg}`}>
-                <Icon size={18} />
-              </div>
-              <div>
-                <p className="font-extrabold text-xl text-text-primary leading-none">{value}</p>
-                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mt-0.5">{label}</p>
-              </div>
+        {/* Profile Card and Stats Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          {/* Admin Profile Info Card */}
+          <div className="p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-4 items-center justify-center">
+            <div className="relative group w-20 h-20">
+              {avatar ? (
+                <img src={avatar} alt="Profile" className="w-full h-full rounded-full object-cover border border-glass-border shadow-md" />
+              ) : (
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center font-display font-extrabold text-2xl text-white shadow-lg shadow-accent-primary/20">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+              )}
+              <label className="absolute inset-0 bg-black/60 hover:bg-black/75 rounded-full flex flex-col items-center justify-center text-white text-[9px] font-bold tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                <Camera size={16} className="mb-1" />
+                <span>Update</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
             </div>
-          ))}
+            <div className="text-center">
+              <p className="font-bold text-text-primary text-sm">{user?.firstName} {user?.lastName}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">{user?.email}</p>
+              <span className="inline-block mt-2 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-accent-primary/10 border border-accent-primary/25 text-accent-primary">
+                Admin
+              </span>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="lg:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { icon: Users,        label: 'Total Vendors',   value: total,    bg: 'bg-accent-primary/10 text-accent-primary' },
+              { icon: CheckCircle2, label: 'Approved',        value: approved, bg: 'bg-emerald-500/10 text-emerald-500' },
+              { icon: Clock,        label: 'Pending Review',  value: pending,  bg: 'bg-accent-warning/10 text-accent-warning' },
+              { icon: XCircle,      label: 'Rejected',        value: rejected, bg: 'bg-accent-danger/10 text-accent-danger' },
+            ].map(({ icon: Icon, label, value, bg }) => (
+              <div key={label} className="flex items-center gap-3 p-4 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${bg}`}>
+                  <Icon size={18} />
+                </div>
+                <div>
+                  <p className="font-extrabold text-xl text-text-primary leading-none">{value}</p>
+                  <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mt-0.5">{label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Filters & Search */}

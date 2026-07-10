@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getCustomerProfile, updateCustomerProfile } from '../../api/vendors';
-import { User, Phone, MapPin, CheckCircle2, AlertCircle } from 'lucide-react';
+import { uploadProductImage } from '../../api/upload';
+import { User, Phone, MapPin, CheckCircle2, AlertCircle, Camera } from 'lucide-react';
 
 export default function Profile() {
   const { user } = useAuth();
   
+  const [avatar, setAvatar] = useState(localStorage.getItem(`avatar_${user?.id}`) || '');
   const [phone, setPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
@@ -14,6 +16,19 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [updating, setUpdating] = useState(false);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const res = await uploadProductImage(file);
+      const url = res.data.imageUrl;
+      setAvatar(url);
+      localStorage.setItem(`avatar_${user?.id}`, url);
+    } catch (err) {
+      console.error("Failed to upload profile photo:", err);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -87,72 +102,100 @@ export default function Profile() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6">
-          {/* Main profile form */}
-          <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-6">
-            
-            {/* Read-only User Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-5 border-b border-glass-border/30">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Full Name</span>
-                <span className="text-sm font-semibold text-text-primary">{user?.firstName} {user?.lastName}</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column: Profile Picture Card */}
+          <div className="flex flex-col gap-5">
+            <div className="p-6 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-4 items-center">
+              <div className="relative group w-24 h-24">
+                {avatar ? (
+                  <img src={avatar} alt="Profile" className="w-full h-full rounded-full object-cover border border-glass-border shadow-md" />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center font-display font-extrabold text-2xl text-white shadow-md">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </div>
+                )}
+                <label className="absolute inset-0 bg-black/60 hover:bg-black/75 rounded-full flex flex-col items-center justify-center text-white text-[10px] font-bold tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                  <Camera size={16} className="mb-1" />
+                  <span>Update</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                </label>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Email Address</span>
-                <span className="text-sm font-semibold text-text-primary">{user?.email}</span>
+              <div className="text-center">
+                <p className="font-bold text-text-primary text-base">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>
+                <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-accent-secondary/10 border border-accent-secondary/25 text-accent-secondary">
+                  Customer
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* Editable Fields */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
-                <Phone size={14} className="text-text-muted" /> Phone Number
-              </label>
-              <input 
-                type="text" 
-                value={phone} 
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. +91 9988776655" 
-                className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 outline-none transition-colors duration-300 focus:border-accent-primary"
-              />
-            </div>
+          {/* Right Column: Edit Profile Form */}
+          <div className="md:col-span-2">
+            <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-6">
+              {/* Read-only User Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-5 border-b border-glass-border/30">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Full Name</span>
+                  <span className="text-sm font-semibold text-text-primary">{user?.firstName} {user?.lastName}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Email Address</span>
+                  <span className="text-sm font-semibold text-text-primary">{user?.email}</span>
+                </div>
+              </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin size={14} className="text-text-muted" /> Shipping Address
-              </label>
-              <textarea 
-                value={shippingAddress} 
-                onChange={(e) => setShippingAddress(e.target.value)}
-                placeholder="Where should your orders be delivered?" 
-                rows={3}
-                className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 outline-none transition-colors duration-300 focus:border-accent-primary resize-y"
-              />
-            </div>
+              {/* Editable Fields */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                  <Phone size={14} className="text-text-muted" /> Phone Number
+                </label>
+                <input 
+                  type="text" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. +91 9988776655" 
+                  className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 outline-none transition-colors duration-300 focus:border-accent-primary"
+                />
+              </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin size={14} className="text-text-muted" /> Billing Address
-              </label>
-              <textarea 
-                value={billingAddress} 
-                onChange={(e) => setBillingAddress(e.target.value)}
-                placeholder="Address for payment billing info (leave empty if same as shipping)" 
-                rows={3}
-                className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 outline-none transition-colors duration-300 focus:border-accent-primary resize-y"
-              />
-            </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                  <MapPin size={14} className="text-text-muted" /> Shipping Address
+                </label>
+                <textarea 
+                  value={shippingAddress} 
+                  onChange={(e) => setShippingAddress(e.target.value)}
+                  placeholder="Where should your orders be delivered?" 
+                  rows={3}
+                  className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 outline-none transition-colors duration-300 focus:border-accent-primary resize-y"
+                />
+              </div>
 
-            <div className="pt-2">
-              <button 
-                type="submit" 
-                disabled={updating}
-                className="bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-sm font-bold px-6 py-2.5 rounded-lg shadow-lg shadow-accent-primary/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
-              >
-                {updating ? 'Saving Changes…' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                  <MapPin size={14} className="text-text-muted" /> Billing Address
+                </label>
+                <textarea 
+                  value={billingAddress} 
+                  onChange={(e) => setBillingAddress(e.target.value)}
+                  placeholder="Address for payment billing info (leave empty if same as shipping)" 
+                  rows={3}
+                  className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 outline-none transition-colors duration-300 focus:border-accent-primary resize-y"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button 
+                  type="submit" 
+                  disabled={updating}
+                  className="bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-sm font-bold px-6 py-2.5 rounded-lg shadow-lg shadow-accent-primary/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
+                >
+                  {updating ? 'Saving Changes…' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
       </div>

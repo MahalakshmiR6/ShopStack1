@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getVendorProfile, updateVendorProfile } from '../../api/vendors';
+import { uploadProductImage } from '../../api/upload';
 import {
   Store,
   FileText,
@@ -12,6 +13,7 @@ import {
   XCircle,
   CalendarDays,
   ShieldCheck,
+  Camera,
 } from 'lucide-react';
 
 const STATUS_META = {
@@ -28,6 +30,7 @@ function formatDate(dt) {
 export default function VendorProfile() {
   const { user } = useAuth();
 
+  const [avatar, setAvatar]               = useState(localStorage.getItem(`avatar_${user?.id}`) || '');
   const [profile, setProfile]             = useState(null);
   const [storeName, setStoreName]         = useState('');
   const [description, setDescription]     = useState('');
@@ -38,6 +41,19 @@ export default function VendorProfile() {
   const [error, setError]       = useState('');
   const [success, setSuccess]   = useState('');
   const [updating, setUpdating] = useState(false);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const res = await uploadProductImage(file);
+      const url = res.data.imageUrl;
+      setAvatar(url);
+      localStorage.setItem(`avatar_${user?.id}`, url);
+    } catch (err) {
+      console.error("Failed to upload profile photo:", err);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -124,19 +140,30 @@ export default function VendorProfile() {
           {/* Left: Status & Info Cards */}
           <div className="flex flex-col gap-5">
 
-            {/* Account Info Card */}
-            <div className="p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center font-display font-extrabold text-2xl text-white shadow-lg shadow-accent-primary/20 mx-auto">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-text-primary text-base">{user?.firstName} {user?.lastName}</p>
-                <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>
-                <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-accent-primary/10 border border-accent-primary/25 text-accent-primary">
-                  Vendor
-                </span>
-              </div>
-            </div>
+             {/* Account Info Card */}
+             <div className="p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-4 items-center">
+               <div className="relative group w-20 h-20">
+                 {avatar ? (
+                   <img src={avatar} alt="Profile" className="w-full h-full rounded-2xl object-cover border border-glass-border shadow-md" />
+                 ) : (
+                   <div className="w-full h-full rounded-2xl bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center font-display font-extrabold text-2xl text-white shadow-lg shadow-accent-primary/20">
+                     {user?.firstName?.[0]}{user?.lastName?.[0]}
+                   </div>
+                 )}
+                 <label className="absolute inset-0 bg-black/60 hover:bg-black/75 rounded-2xl flex flex-col items-center justify-center text-white text-[9px] font-bold tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                   <Camera size={16} className="mb-1" />
+                   <span>Update</span>
+                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                 </label>
+               </div>
+               <div className="text-center">
+                 <p className="font-bold text-text-primary text-base">{user?.firstName} {user?.lastName}</p>
+                 <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>
+                 <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-accent-primary/10 border border-accent-primary/25 text-accent-primary">
+                   Vendor
+                 </span>
+               </div>
+             </div>
 
             {/* Store Status Card */}
             <div className="p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-3">
