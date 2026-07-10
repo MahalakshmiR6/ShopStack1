@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { searchProducts, getCategories, addReview } from '../../api/products';
@@ -84,11 +84,15 @@ const getCategoryMeta = (slug) => {
 };
 
 function ProductCard({ product, onSelect }) {
+  const { user } = useAuth();
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const primaryImage = product.images?.find((i) => i.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl;
   const avgRating = product.reviews?.length
     ? (product.reviews.reduce((s, r) => s + r.rating, 0) / product.reviews.length).toFixed(1)
     : null;
+
+  const showAddToCart = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
 
   return (
     <div 
@@ -122,15 +126,23 @@ function ProductCard({ product, onSelect }) {
           </div>
 
           {product.stockQuantity > 0 ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                addToCart(product, 1);
-              }}
-              className="px-3.5 py-2 rounded-lg bg-accent-primary/10 border border-accent-primary/20 hover:bg-accent-primary hover:text-white text-[10px] font-bold text-accent-primary transition-all duration-300 cursor-pointer"
-            >
-              Add to Cart
-            </button>
+            showAddToCart ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!user) {
+                    navigate('/login');
+                    return;
+                  }
+                  addToCart(product, 1);
+                }}
+                className="px-3.5 py-2 rounded-lg bg-accent-primary/10 border border-accent-primary/20 hover:bg-accent-primary hover:text-white text-[10px] font-bold text-accent-primary transition-all duration-300 cursor-pointer"
+              >
+                Add to Cart
+              </button>
+            ) : (
+              <span className="text-[10px] font-bold text-accent-secondary">In Stock</span>
+            )
           ) : (
             <span className="text-[10px] font-bold text-accent-danger">Out of Stock</span>
           )}
@@ -146,6 +158,8 @@ function ProductCard({ product, onSelect }) {
 export default function Home() {
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const navigate = useNavigate();
+  const showAddToCart = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
   
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -637,7 +651,7 @@ export default function Home() {
               </div>
 
               {/* Quantity Selector & Add to Cart */}
-              {selectedProduct.stockQuantity > 0 && (
+              {showAddToCart && selectedProduct.stockQuantity > 0 && (
                 <div className="flex items-center gap-4 mt-6 pt-4 border-t border-glass-border">
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Quantity</span>
@@ -675,6 +689,10 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => {
+                      if (!user) {
+                        navigate('/login');
+                        return;
+                      }
                       addToCart(selectedProduct, modalQty);
                       setAddedFeedback(true);
                       setTimeout(() => setAddedFeedback(false), 1500);

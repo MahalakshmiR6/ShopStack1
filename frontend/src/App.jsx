@@ -32,9 +32,9 @@ export default function App() {
         <BrowserRouter>
         <Routes>
           {/* Public */}
+          <Route path="/"         element={<Layout><Home /></Layout>} />
           <Route path="/login"    element={<Layout><Login /></Layout>} />
           <Route path="/register" element={<Layout><Register /></Layout>} />
-          <Route path="/"         element={<Layout><Home /></Layout>} />
           <Route path="/unauthorized" element={<Layout><Unauthorized /></Layout>} />
 
           {/* Vendor only */}

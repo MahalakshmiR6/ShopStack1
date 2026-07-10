@@ -9,11 +9,7 @@ import {
   ChevronDown, 
   ShoppingBag, 
   Search, 
-  ShoppingCart, 
-  HelpCircle, 
-  Info, 
-  ExternalLink, 
-  Activity 
+  ShoppingCart
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
@@ -24,14 +20,10 @@ export default function Navbar() {
   
   // Dropdown states
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
 
   // Refs for click outside
   const dropdownRef = useRef(null);
-  const aboutRef = useRef(null);
-  const helpRef = useRef(null);
   const cartRef = useRef(null);
 
   const handleLogout = () => {
@@ -54,12 +46,6 @@ export default function Navbar() {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
-      }
-      if (aboutRef.current && !aboutRef.current.contains(event.target)) {
-        setAboutOpen(false);
-      }
-      if (helpRef.current && !helpRef.current.contains(event.target)) {
-        setHelpOpen(false);
       }
       if (cartRef.current && !cartRef.current.contains(event.target)) {
         setCartOpen(false);
@@ -99,103 +85,6 @@ export default function Navbar() {
                   Dashboard
                 </Link>
               )}
-
-              {/* About Dropdown */}
-              <div className="relative" ref={aboutRef}>
-                <button
-                  onClick={() => {
-                    setAboutOpen(!aboutOpen);
-                    setHelpOpen(false);
-                    setDropdownOpen(false);
-                    setCartOpen(false);
-                  }}
-                  className="flex items-center gap-1 text-text-secondary text-sm font-medium px-3 py-2 rounded-md hover:text-text-primary hover:bg-bg-tertiary transition-all duration-300 select-none cursor-pointer"
-                >
-                  <Info size={14} />
-                  <span>About</span>
-                  <ChevronDown size={12} className={`transition-transform duration-200 ${aboutOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {aboutOpen && (
-                  <div className="absolute left-0 mt-2 w-72 rounded-lg border border-glass-border bg-bg-secondary shadow-2xl p-5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-text-primary">
-                    <h4 className="font-display font-bold text-sm mb-2 text-text-primary flex items-center gap-1.5">
-                      <ShoppingBag size={16} className="text-accent-primary" />
-                      About ShopStack
-                    </h4>
-                    <p className="text-xs text-text-secondary leading-relaxed mb-4">
-                      ShopStack is an enterprise-grade multi-vendor marketplace platform enabling seamless catalog discovery, verified merchants, and instant digital checkout.
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 mb-4 pt-3 border-t border-glass-border">
-                      <div className="bg-bg-tertiary/50 p-2 rounded-lg text-center">
-                        <span className="block font-bold text-sm text-accent-primary">10k+</span>
-                        <span className="text-[10px] text-text-muted">Products</span>
-                      </div>
-                      <div className="bg-bg-tertiary/50 p-2 rounded-lg text-center">
-                        <span className="block font-bold text-sm text-accent-secondary">500+</span>
-                        <span className="text-[10px] text-text-muted">Vendors</span>
-                      </div>
-                    </div>
-                    <a 
-                      href="https://github.com" 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="text-xs font-semibold text-accent-primary hover:text-indigo-600 transition-colors flex items-center gap-1 justify-center py-1.5 border border-glass-border rounded-md hover:bg-bg-tertiary"
-                    >
-                      Documentation <ExternalLink size={12} />
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {/* Help & Support Dropdown */}
-              <div className="relative" ref={helpRef}>
-                <button
-                  onClick={() => {
-                    setHelpOpen(!helpOpen);
-                    setAboutOpen(false);
-                    setDropdownOpen(false);
-                    setCartOpen(false);
-                  }}
-                  className="flex items-center gap-1 text-text-secondary text-sm font-medium px-3 py-2 rounded-md hover:text-text-primary hover:bg-bg-tertiary transition-all duration-300 select-none cursor-pointer"
-                >
-                  <HelpCircle size={14} />
-                  <span>Help</span>
-                  <ChevronDown size={12} className={`transition-transform duration-200 ${helpOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {helpOpen && (
-                  <div className="absolute left-0 mt-2 w-72 rounded-lg border border-glass-border bg-bg-secondary shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-text-primary flex flex-col gap-3">
-                    <div>
-                      <h4 className="font-semibold text-xs text-text-muted uppercase tracking-wider mb-2">Frequently Asked FAQs</h4>
-                      <div className="flex flex-col gap-2">
-                        <div className="text-xs">
-                          <span className="font-semibold block text-text-primary">How do I become a seller?</span>
-                          <span className="text-text-secondary">Register and select "Vendor" role in the form.</span>
-                        </div>
-                        <div className="text-xs">
-                          <span className="font-semibold block text-text-primary">What about product shipping?</span>
-                          <span className="text-text-secondary">Shipping speeds depend on vendor specifications.</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="h-px bg-glass-border" />
-                    <div>
-                      <h4 className="font-semibold text-xs text-text-muted uppercase tracking-wider mb-1.5">Direct Contacts</h4>
-                      <p className="text-xs text-text-secondary">Email: <span className="text-text-primary font-medium">support@shopstack.com</span></p>
-                      <p className="text-xs text-text-secondary">Hotline: <span className="text-text-primary font-medium">1-800-SHOP-STACK</span></p>
-                    </div>
-                    <div className="h-px bg-glass-border" />
-                    <div className="flex items-center justify-between text-[11px] text-text-secondary">
-                      <span className="flex items-center gap-1.5">
-                        <Activity size={12} className="text-emerald-500 animate-pulse" />
-                        Status: <span className="font-bold text-emerald-600">Operational</span>
-                      </span>
-                      <span className="text-[10px] text-text-muted">v1.0.0</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
             </div>
           </div>
 
@@ -220,8 +109,6 @@ export default function Navbar() {
                 <button
                   onClick={() => {
                     setCartOpen(!cartOpen);
-                    setAboutOpen(false);
-                    setHelpOpen(false);
                     setDropdownOpen(false);
                   }}
                   className="relative flex items-center justify-center w-10 h-10 rounded-md border border-glass-border bg-glass backdrop-blur-md text-text-secondary hover:text-text-primary hover:border-accent-primary transition-all duration-300 cursor-pointer"
@@ -312,8 +199,6 @@ export default function Navbar() {
                 <button
                   onClick={() => {
                     setDropdownOpen(!dropdownOpen);
-                    setAboutOpen(false);
-                    setHelpOpen(false);
                     setCartOpen(false);
                   }}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-glass-border bg-glass backdrop-blur-md text-text-primary text-sm font-medium hover:border-accent-primary transition-all duration-300 select-none cursor-pointer"
