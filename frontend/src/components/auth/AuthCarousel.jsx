@@ -26,7 +26,7 @@ export default function AuthCarousel({ className = '' }) {
     if (isHovered) return;
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % slides.length);
-    }, 4500);
+    }, 2000);
     return () => clearInterval(interval);
   }, [isHovered]);
 
@@ -61,7 +61,7 @@ export default function AuthCarousel({ className = '' }) {
       {/* Foreground Content */}
       <div className="relative z-10 flex flex-col justify-end">
         {/* Caption */}
-        <div className="min-h-[80px] mb-4">
+        <div className="min-h-[80px] mb-2">
           {slides.map((slide, idx) => (
             <div
               key={idx}

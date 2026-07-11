@@ -43,16 +43,11 @@ export default function Register() {
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] bg-accent-primary/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[35rem] h-[35rem] bg-accent-secondary/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-5xl rounded-3xl border border-glass-border bg-glass/40 backdrop-blur-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 my-8 animate-in fade-in zoom-in-95 duration-500">
+      <div className="relative z-10 w-full max-w-5xl rounded-3xl border border-glass-border bg-glass/40 backdrop-blur-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 animate-in fade-in zoom-in-95 duration-500 min-h-[650px]">
         
         {/* Left Side: Info (5 cols on lg) */}
-        <div className="hidden lg:block lg:col-span-5 relative overflow-hidden">
-          <AuthCarousel className="pb-24" />
-          
-          <div className="absolute bottom-6 left-12 right-12 z-20 pt-4 border-t border-white/10 text-xs text-slate-400 flex items-center justify-between">
-            <span>© 2026 ShopStack Inc.</span>
-            <span>v1.0.0</span>
-          </div>
+        <div className="hidden lg:block lg:col-span-5 relative overflow-hidden min-h-[680px]">
+          <AuthCarousel />
         </div>
 
         {/* Right Side: Form (7 cols on lg) */}
