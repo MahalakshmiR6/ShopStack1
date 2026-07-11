@@ -62,4 +62,9 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @GetMapping("/customers/count")
+    public ResponseEntity<Long> getCustomerCount(){
+        return ResponseEntity.ok(profileService.getCustomerCount());
+    }
 }

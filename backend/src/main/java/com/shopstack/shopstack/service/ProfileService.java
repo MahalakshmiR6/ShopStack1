@@ -82,4 +82,9 @@ public class ProfileService {
     public List<VendorProfile> getAllVendors() {
         return vendorProfileRepository.findAll();
     }
+
+     public long getCustomerCount(){
+        return userRepository.countByRole(Role.CUSTOMER);
+     }
+
 }
