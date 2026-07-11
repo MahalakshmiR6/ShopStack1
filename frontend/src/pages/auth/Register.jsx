@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, User, Store, ShoppingBag, AlertCircle, CheckCircle, Zap, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, User, Store, ShoppingBag, AlertCircle, CheckCircle } from 'lucide-react';
+import AuthCarousel from '../../components/auth/AuthCarousel';
 
 const INITIAL = {
   firstName: '', lastName: '', email: '', password: '',
@@ -45,59 +46,10 @@ export default function Register() {
       <div className="relative z-10 w-full max-w-5xl rounded-3xl border border-glass-border bg-glass/40 backdrop-blur-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 my-8 animate-in fade-in zoom-in-95 duration-500">
         
         {/* Left Side: Info (5 cols on lg) */}
-        <div className="hidden lg:flex lg:col-span-5 relative bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 p-12 text-white flex-col justify-between overflow-hidden">
-          {/* Subtle glow inside left side */}
-          <div className="absolute top-0 right-0 w-[20rem] h-[20rem] bg-accent-primary/20 rounded-full blur-[80px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-[20rem] h-[20rem] bg-accent-secondary/15 rounded-full blur-[80px] pointer-events-none" />
+        <div className="hidden lg:block lg:col-span-5 relative overflow-hidden">
+          <AuthCarousel className="pb-24" />
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-2.5 mb-10">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md">
-                <ShoppingBag size={20} className="text-white" />
-              </div>
-              <span className="font-display font-extrabold text-xl tracking-tight text-white">ShopStack</span>
-            </div>
-            
-            <h2 className="text-3xl font-extrabold text-white leading-tight mb-4">
-              Join Our <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-primary to-indigo-400">Enterprise Network</span>
-            </h2>
-            <p className="text-slate-300 text-sm leading-relaxed mb-8">
-              Create your account today and unlock a robust, secure, and lightning-fast commerce ecosystem designed for scale.
-            </p>
-            
-            <div className="flex flex-col gap-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                  <Store size={18} className="text-indigo-400" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white">Expand Your Reach</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Sell directly to global buyers, manage listings, and fulfill orders effortlessly.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                  <ShieldCheck size={18} className="text-emerald-400" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white">Secure Transactions</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Built-in protections and advanced cryptographic verification for maximum safety.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                  <Zap size={18} className="text-amber-400" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white">Instant Activation</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Quick setup that gets you ready to explore or list items in just a few clicks.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="relative z-10 mt-12 pt-6 border-t border-white/10 text-xs text-slate-400 flex items-center justify-between">
+          <div className="absolute bottom-6 left-12 right-12 z-20 pt-4 border-t border-white/10 text-xs text-slate-400 flex items-center justify-between">
             <span>© 2026 ShopStack Inc.</span>
             <span>v1.0.0</span>
           </div>

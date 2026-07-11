@@ -23,3 +23,6 @@ export const updateVendorStatus = (id, status, commissionRate) =>
 
 export const updateAvatar = (avatarUrl) =>
   api.put('/api/profiles/avatar', { avatarUrl });
+
+export const getCustomerCount=()=>
+  api.get('/api/admin/customers/count');

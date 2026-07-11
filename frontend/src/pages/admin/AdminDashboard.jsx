@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getAllVendors, updateVendorStatus } from '../../api/vendors';
+import { getAllVendors, updateVendorStatus,getCustomerCount } from '../../api/vendors';
 import { getPendingProducts, approveProduct } from '../../api/products';
 import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const [customerCount,setCustomerCount]=useState(0);
   const [vendors, setVendors] = useState([]);
   const [pendingProducts, setPendingProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,10 +12,11 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
-    Promise.all([getAllVendors(), getPendingProducts()])
-      .then(([vRes, pRes]) => {
+    Promise.all([getAllVendors(), getPendingProducts(), getCustomerCount()])
+      .then(([vRes, pRes, ccRes]) => {   
         setVendors(vRes.data);
         setPendingProducts(pRes.data);
+        setCustomerCount(ccRes.data);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -56,7 +58,8 @@ export default function AdminDashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {[
-            { icon: Users,       label: 'Total Vendors',    value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary' },
+            { icon: Users,       label: 'Total Users',      value: customerCount, bg: 'bg-accent-primary/10 text-accent-primary' },
+            { icon: Store,       label: 'Total Vendors',    value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary' },
             { icon: CheckCircle, label: 'Approved Vendors', value: approved,       bg: 'bg-accent-secondary/10 text-accent-secondary' },
             { icon: Clock,       label: 'Pending Vendors',  value: pending,        bg: 'bg-accent-warning/10 text-accent-warning' },
             { icon: Package,     label: 'Pending Products', value: pendingProducts.length, bg: 'bg-purple-500/10 text-purple-600' },
