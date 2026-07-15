@@ -54,7 +54,7 @@ public class CategorySeeder implements CommandLineRunner {
                 System.out.println("Seeded category: " + cat.getName());
             }
         }
-        System.out.println("Category seeding check complete!");
+        // System.out.println("Category seeding check complete!");
 
         // Seed default admin
         User adminUser = userRepository.findByEmail("admin1@shopstack.com").orElse(null);

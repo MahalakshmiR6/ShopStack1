@@ -87,4 +87,16 @@ public class ProfileService {
         return userRepository.countByRole(Role.CUSTOMER);
      }
 
+      public List<User> getCustomers() {
+          return userRepository.findByRole(Role.CUSTOMER);
+      }
+
+      @Transactional
+      public User toggleUserStatus(UUID userId) {
+          User user = userRepository.findById(userId)
+                  .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+          user.setActive(!user.isActive());
+          return userRepository.save(user);
+      }
+
 }

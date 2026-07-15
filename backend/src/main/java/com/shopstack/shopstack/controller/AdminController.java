@@ -1,5 +1,6 @@
 package com.shopstack.shopstack.controller;
 
+import com.shopstack.shopstack.model.User;
 import com.shopstack.shopstack.model.VendorProfile;
 import com.shopstack.shopstack.model.VendorStatus;
 import com.shopstack.shopstack.service.ProfileService;
@@ -66,5 +67,19 @@ public class AdminController {
     @GetMapping("/customers/count")
     public ResponseEntity<Long> getCustomerCount(){
         return ResponseEntity.ok(profileService.getCustomerCount());
+    }
+
+    @GetMapping("/customers")
+    public ResponseEntity<List<User>> listCustomers() {
+        return ResponseEntity.ok(profileService.getCustomers());
+    }
+
+    @PutMapping("/users/{id}/toggle-status")
+    public ResponseEntity<?> toggleUserStatus(@PathVariable("id") UUID id) {
+        try {
+            return ResponseEntity.ok(profileService.toggleUserStatus(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

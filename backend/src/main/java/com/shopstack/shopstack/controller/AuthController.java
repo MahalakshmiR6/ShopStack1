@@ -8,6 +8,7 @@ import com.shopstack.shopstack.repository.UserRepository;
 import com.shopstack.shopstack.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +50,10 @@ public class AuthController {
         try {
             LoginResponse response = authService.login(request);
             return ResponseEntity.ok(response);
+        } catch (DisabledException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Your account has been suspended. Please contact admin.");
+            return ResponseEntity.status(403).body(errorResponse);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Invalid email or password!");
