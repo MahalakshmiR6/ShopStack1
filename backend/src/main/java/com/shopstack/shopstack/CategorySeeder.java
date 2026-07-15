@@ -85,6 +85,21 @@ public class CategorySeeder implements CommandLineRunner {
             vendorUser = userRepository.save(vendorUser);
             System.out.println("Seeded default vendor user.");
         }
+        
+        // Seed suspended user
+        User suspendedUser = userRepository.findByEmail("suspended@shopstack.com").orElse(null);
+        if (suspendedUser == null) {
+            suspendedUser = User.builder()
+                    .email("suspended@shopstack.com")
+                    .passwordHash(passwordEncoder.encode("Suspended@123"))
+                    .firstName("Suspended")
+                    .lastName("User")
+                    .role(Role.CUSTOMER)
+                    .isActive(false)
+                    .build();
+            userRepository.save(suspendedUser);
+            System.out.println("Seeded suspended user: suspended@shopstack.com / Suspended@123");
+        }
 
         VendorProfile vendorProfile = vendorProfileRepository.findByUserId(vendorUser.getId()).orElse(null);
         if (vendorProfile == null) {

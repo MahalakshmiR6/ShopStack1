@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, ShoppingBag, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ShoppingBag, AlertCircle, ShieldAlert, X } from 'lucide-react';
 import AuthCarousel from '../../components/auth/AuthCarousel';
 
 export default function Login() {
@@ -10,6 +10,8 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSuspendedModalOpen, setIsSuspendedModalOpen] = useState(false);
+  const [suspendedErrorMsg, setSuspendedErrorMsg] = useState('');
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -26,7 +28,13 @@ export default function Login() {
         default:         navigate('/');        break;
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid email or password.');
+      const errorMsg = err.response?.data?.error || 'Invalid email or password.';
+      if (err.response?.status === 403) {
+        setSuspendedErrorMsg(errorMsg);
+        setIsSuspendedModalOpen(true);
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -123,6 +131,52 @@ export default function Login() {
         </div>
 
       </div>
+
+      {/* Account Suspended Modal */}
+      {isSuspendedModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-bg-primary border border-glass-border rounded-2xl overflow-hidden shadow-2xl text-text-primary p-6 flex flex-col items-center text-center backdrop-blur-md animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsSuspendedModalOpen(false)}
+              className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Warning Icon */}
+            <div className="w-16 h-16 rounded-full bg-accent-danger/10 flex items-center justify-center mb-4 text-accent-danger border border-accent-danger/20 animate-bounce">
+              <ShieldAlert size={36} />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold text-text-primary mb-2 font-display">
+              Account Suspended
+            </h3>
+
+            {/* Description */}
+            <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+              {suspendedErrorMsg || 'Your account has been suspended. Please contact the administrator.'}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="w-full flex flex-col gap-2">
+              <a
+                href="mailto:support@shopstack.com?subject=Account%20Suspension%20Appeal"
+                className="w-full cursor-pointer py-2.5 rounded-lg bg-gradient-to-r from-accent-danger to-red-600 hover:from-red-600 hover:to-accent-danger text-white font-semibold text-sm shadow-md transition-all duration-300 transform hover:-translate-y-0.5 text-center"
+              >
+                Contact Support
+              </a>
+              <button
+                onClick={() => setIsSuspendedModalOpen(false)}
+                className="w-full cursor-pointer py-2.5 rounded-lg border border-glass-border hover:bg-black/5 text-text-secondary font-semibold text-sm transition-all duration-300"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
