@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllVendors, updateVendorStatus,getCustomerCount } from '../../api/vendors';
+import { getAllVendors, updateVendorStatus, getCustomerCount, getAllCustomers, toggleUserStatus } from '../../api/vendors';
 import { getPendingProducts, approveProduct } from '../../api/products';
 import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star } from 'lucide-react';
 
@@ -7,13 +7,15 @@ export default function AdminDashboard() {
   const [customerCount,setCustomerCount]=useState(0);
   const [vendors, setVendors] = useState([]);
   const [pendingProducts, setPendingProducts] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('vendors');
+  const [activeTab, setActiveTab] = useState('users');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
-    Promise.all([getAllVendors(), getPendingProducts(), getCustomerCount()])
-      .then(([vRes, pRes, ccRes]) => {   
+    Promise.all([getAllVendors(), getPendingProducts(), getCustomerCount(), getAllCustomers()])
+      .then(([vRes, pRes, ccRes, cRes]) => {   
+        setCustomers(cRes.data);
         setVendors(vRes.data);
         setPendingProducts(pRes.data);
         setCustomerCount(ccRes.data);
@@ -40,6 +42,15 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleUserStatus = async (id) => {
+    try {
+      const res = await toggleUserStatus(id);
+      setCustomers((prev) => prev.map((c) => c.id === id ? res.data : c));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update user status.');
+    }
+  };
+
   const approved = vendors.filter((v) => v.status === 'APPROVED').length;
   const pending  = vendors.filter((v) => v.status === 'PENDING_APPROVAL').length;
 
@@ -58,13 +69,17 @@ export default function AdminDashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {[
-            { icon: Users,       label: 'Total Users',      value: customerCount, bg: 'bg-accent-primary/10 text-accent-primary' },
-            { icon: Store,       label: 'Total Vendors',    value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary' },
-            { icon: CheckCircle, label: 'Approved Vendors', value: approved,       bg: 'bg-accent-secondary/10 text-accent-secondary' },
-            { icon: Clock,       label: 'Pending Vendors',  value: pending,        bg: 'bg-accent-warning/10 text-accent-warning' },
-            { icon: Package,     label: 'Pending Products', value: pendingProducts.length, bg: 'bg-purple-500/10 text-purple-600' },
-          ].map(({ icon: Icon, label, value, bg }) => (
-            <div key={label} className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
+            { icon: Users,       label: 'Total Users',      value: customerCount, bg: 'bg-accent-primary/10 text-accent-primary', tab: 'users' },
+            { icon: Store,       label: 'Total Vendors',    value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary', tab: 'vendors' },
+            { icon: CheckCircle, label: 'Approved Vendors', value: approved,       bg: 'bg-accent-secondary/10 text-accent-secondary', tab: 'vendors' },
+            { icon: Clock,       label: 'Pending Vendors',  value: pending,        bg: 'bg-accent-warning/10 text-accent-warning', tab: 'vendors' },
+            { icon: Package,     label: 'Pending Products', value: pendingProducts.length, bg: 'bg-purple-500/10 text-purple-600', tab: 'products' },
+          ].map(({ icon: Icon, label, value, bg, tab }) => (
+            <button
+              key={label}
+              onClick={() => tab && setActiveTab(tab)}
+              className="flex items-center text-left w-full gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md hover:bg-glass/20 transition-all duration-200 cursor-pointer focus:outline-none"
+            >
               <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${bg}`}>
                 <Icon size={20} />
               </div>
@@ -72,12 +87,24 @@ export default function AdminDashboard() {
                 <p className="font-display text-2xl font-extrabold text-text-primary leading-none">{value}</p>
                 <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mt-1">{label}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-glass-border mb-6">
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === 'users'
+                ? 'border-accent-primary text-accent-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+            onClick={() => setActiveTab('users')}
+          >
+            <Users size={15} />
+            <span>Users</span>
+            {customerCount > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{customerCount}</span>}
+          </button>
           <button
             className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
               activeTab === 'vendors'
@@ -103,6 +130,61 @@ export default function AdminDashboard() {
             {pendingProducts.length > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{pendingProducts.length}</span>}
           </button>
         </div>
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="overflow-x-auto rounded-xl border border-glass-border bg-glass/5">
+            {loading ? (
+              <p className="text-sm text-text-muted p-6">Loading users…</p>
+            ) : customers.length === 0 ? (
+              <p className="text-sm text-text-muted p-6">No users found.</p>
+            ) : (
+              <table className="min-w-full divide-y divide-glass-border text-sm text-left">
+                <thead className="bg-bg-tertiary/70 text-[11px] font-bold text-text-muted uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4">Name</th>
+                    <th className="px-6 py-4">Email</th>
+                    <th className="px-6 py-4">Joined Date</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-glass-border/40">
+                  {customers.map((c) => (
+                    <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-semibold text-text-primary">
+                        {c.firstName} {c.lastName}
+                      </td>
+                      <td className="px-6 py-4 text-text-secondary">{c.email}</td>
+                      <td className="px-6 py-4 text-text-secondary">
+                        {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                          (c.isActive !== undefined ? c.isActive : c.active) ? 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' : 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger'
+                        }`}>
+                          {(c.isActive !== undefined ? c.isActive : c.active) ? 'Active' : 'Suspended'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleToggleUserStatus(c.id)}
+                          className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm ${
+                            (c.isActive !== undefined ? c.isActive : c.active) 
+                              ? 'bg-accent-danger/10 text-accent-danger hover:bg-accent-danger/20' 
+                              : 'bg-accent-secondary/10 text-accent-secondary hover:bg-accent-secondary/20'
+                          }`}
+                        >
+                          {(c.isActive !== undefined ? c.isActive : c.active) ? 'Suspend' : 'Activate'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
 
         {/* Vendors Tab */}
         {activeTab === 'vendors' && (

@@ -26,3 +26,9 @@ export const updateAvatar = (avatarUrl) =>
 
 export const getCustomerCount=()=>
   api.get('/api/admin/customers/count');
+
+export const getAllCustomers = () =>
+  api.get('/api/admin/customers');
+
+export const toggleUserStatus = (id) =>
+  api.put(`/api/admin/users/${id}/toggle-status`);
