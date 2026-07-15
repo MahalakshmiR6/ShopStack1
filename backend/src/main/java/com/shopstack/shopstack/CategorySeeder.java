@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,22 +21,43 @@ public class CategorySeeder implements CommandLineRunner {
     private final VendorProfileRepository vendorProfileRepository;
     private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CouponRepository couponRepository;
 
     public CategorySeeder(CategoryRepository categoryRepository,
                           UserRepository userRepository,
                           VendorProfileRepository vendorProfileRepository,
                           ProductRepository productRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder, CouponRepository couponRepository) {
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.vendorProfileRepository = vendorProfileRepository;
         this.productRepository = productRepository;
         this.passwordEncoder = passwordEncoder;
+        this.couponRepository = couponRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        // System.out.println("Checking and seeding default categories...");
+        
+        if (couponRepository.count() == 0) {
+            Coupon save20 = Coupon.builder()
+                    .code("SAVE20")
+                    .discountType("PERCENTAGE")
+                    .discountValue(new BigDecimal("20.00"))
+                    .expiryDate(LocalDateTime.now().plusYears(5))
+                    .active(true)
+                    .build();
+            Coupon flat500 = Coupon.builder()
+                    .code("FLAT500")
+                    .discountType("FLAT")
+                    .discountValue(new BigDecimal("500.00"))
+                    .expiryDate(LocalDateTime.now().plusYears(5))
+                    .active(true)
+                    .build();
+            couponRepository.save(save20);
+            couponRepository.save(flat500);
+            System.out.println("Seeded default coupons: SAVE20, FLAT500");
+        }
 
         List<Category> defaultCategories = Arrays.asList(
                 Category.builder().name("Electronics").slug("electronics").build(),
