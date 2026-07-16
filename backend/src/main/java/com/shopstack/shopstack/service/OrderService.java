@@ -88,15 +88,31 @@ public class OrderService {
 
         finalAmount = subtotal.subtract(discount);
 
-        var paymentResult = paymentService.processPayment(
-                finalAmount,
-                request.getPaymentMethod(),
-                request.getBillingInfo()
-        );
+        String transactionId;
 
-        if (!(Boolean) paymentResult.get("success")) {
-            throw new RuntimeException(
-                    paymentResult.get("message").toString());
+        if ("RAZORPAY".equalsIgnoreCase(request.getPaymentMethod())) {
+            boolean isValid = paymentService.verifySignature(
+                    request.getRazorpayOrderId(),
+                    request.getRazorpayPaymentId(),
+                    request.getRazorpaySignature()
+            );
+
+            if (!isValid) {
+                throw new RuntimeException("Payment signature verification failed.");
+            }
+            transactionId = request.getRazorpayPaymentId();
+        } else {
+            var paymentResult = paymentService.processPayment(
+                    finalAmount,
+                    request.getPaymentMethod(),
+                    request.getBillingInfo()
+            );
+
+            if (!(Boolean) paymentResult.get("success")) {
+                throw new RuntimeException(
+                        paymentResult.get("message").toString());
+            }
+            transactionId = paymentResult.get("transactionId").toString();
         }
 
 
@@ -110,7 +126,7 @@ public class OrderService {
                 .paymentMethod(request.getPaymentMethod())
                 .paymentStatus("PAID")
                 .trackingStatus("PLACED")
-                .transactionId(paymentResult.get("transactionId").toString())
+                .transactionId(transactionId)
                 .build();
 
         for (OrderItem item : orderItems) {
@@ -181,6 +197,37 @@ public class OrderService {
         return orderRepository.findAll();
     }
 
+    public BigDecimal calculateOrderTotal(CheckoutRequest request) {
+        BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal discount = BigDecimal.ZERO;
 
+        for (CartItemRequest item : request.getItems()) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            BigDecimal itemTotal = product.getPrice()
+                    .multiply(BigDecimal.valueOf(item.getQuantity()));
+            subtotal = subtotal.add(itemTotal);
+        }
+
+        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            Coupon coupon = couponRepository
+                    .findByCodeIgnoreCaseAndActiveTrue(request.getCouponCode())
+                    .orElseThrow(() -> new RuntimeException("Invalid Coupon"));
+
+            if (coupon.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
+                throw new RuntimeException("Coupon Expired");
+            }
+
+            if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
+                discount = subtotal.multiply(coupon.getDiscountValue())
+                        .divide(BigDecimal.valueOf(100));
+            } else if ("FLAT".equalsIgnoreCase(coupon.getDiscountType())) {
+                discount = coupon.getDiscountValue();
+            }
+        }
+
+        return subtotal.subtract(discount);
+    }
 
 }

@@ -1,5 +1,6 @@
 package com.shopstack.shopstack.controller;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import com.shopstack.shopstack.model.User;
 import com.shopstack.shopstack.repository.CouponRepository;
 import com.shopstack.shopstack.repository.UserRepository;
 import com.shopstack.shopstack.service.OrderService;
+import com.shopstack.shopstack.service.PaymentService;
 
 @RestController
 public class OrderController {
@@ -30,11 +32,13 @@ public class OrderController {
     private final OrderService orderService;
     private final UserRepository userRepository;
     private final CouponRepository couponRepository;
+    private final PaymentService paymentService;
 
-    public OrderController(OrderService orderService, UserRepository userRepository, CouponRepository couponRepository) {
+    public OrderController(OrderService orderService, UserRepository userRepository, CouponRepository couponRepository, PaymentService paymentService) {
         this.orderService = orderService;
         this.userRepository = userRepository;
         this.couponRepository = couponRepository;
+        this.paymentService = paymentService;
     }
 
     private User getCurrentUser() {
@@ -45,6 +49,17 @@ public class OrderController {
         String email = authentication.getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    @PostMapping("/api/orders/create-payment-session")
+    public ResponseEntity<?> createPaymentSession(@Validated @RequestBody CheckoutRequest request) {
+        try {
+            BigDecimal finalAmount = orderService.calculateOrderTotal(request);
+            Map<String, Object> session = paymentService.createRazorpayOrder(finalAmount);
+            return ResponseEntity.ok(session);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/api/orders/checkout")
@@ -131,9 +146,9 @@ public class OrderController {
                 throw new IllegalArgumentException("Coupon code has expired!");
             }
             return ResponseEntity.ok(Map.of(
-                "code", coupon.getCode(),
-                "discountType", coupon.getDiscountType(),
-                "discountValue", coupon.getDiscountValue()
+                    "code", coupon.getCode(),
+                    "discountType", coupon.getDiscountType(),
+                    "discountValue", coupon.getDiscountValue()
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

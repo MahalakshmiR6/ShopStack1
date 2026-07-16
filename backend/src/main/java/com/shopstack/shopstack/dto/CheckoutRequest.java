@@ -17,7 +17,12 @@ public class CheckoutRequest {
 
     private String billingAddress;
 
-    private String paymentMethod;
+    private String paymentMethod; // e.g., "RAZORPAY" or "MOCK"
 
     private String billingInfo;
+
+    // Razorpay signature verification parameters
+    private String razorpayOrderId;
+    private String razorpayPaymentId;
+    private String razorpaySignature;
 }
