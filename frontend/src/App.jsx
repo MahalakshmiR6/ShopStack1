@@ -7,6 +7,7 @@ import Navbar from './components/layout/Navbar';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Home from './pages/home/Home';
+import ProductDetail from './pages/home/ProductDetail'; 
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorProfile from './pages/vendor/VendorProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -15,6 +16,7 @@ import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
 import Wishlist from './pages/customer/Wishlist';
+import Checkout from './pages/customer/Checkout';
 import { Unauthorized, NotFound } from './pages/misc/Fallback';
 import './index.css';
 
@@ -33,35 +35,37 @@ export default function App() {
       <CartProvider>
         <WishlistProvider>
           <BrowserRouter>
-          <Routes>
-          {/* Public */}
-          <Route path="/"         element={<Layout><Home /></Layout>} />
-          <Route path="/login"    element={<Layout><Login /></Layout>} />
-          <Route path="/register" element={<Layout><Register /></Layout>} />
-          <Route path="/unauthorized" element={<Layout><Unauthorized /></Layout>} />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Layout><Home /></Layout>} />
+              <Route path="/product/:slug" element={<Layout><ProductDetail /></Layout>} />
+              <Route path="/login" element={<Layout><Login /></Layout>} />
+              <Route path="/register" element={<Layout><Register /></Layout>} />
+              <Route path="/unauthorized" element={<Layout><Unauthorized /></Layout>} />
 
-          {/* Vendor only */}
-          <Route element={<RoleRoute role="VENDOR" />}>
-            <Route path="/vendor" element={<Layout><VendorDashboard /></Layout>} />
-            <Route path="/vendor/profile" element={<Layout><VendorProfile /></Layout>} />
-          </Route>
+              {/* Vendor Routes */}
+              <Route element={<RoleRoute role="VENDOR" />}>
+                <Route path="/vendor" element={<Layout><VendorDashboard /></Layout>} />
+                <Route path="/vendor/profile" element={<Layout><VendorProfile /></Layout>} />
+              </Route>
 
-          {/* Admin only */}
-          <Route element={<RoleRoute role="ADMIN" />}>
-            <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
-            <Route path="/admin/profile" element={<Layout><AdminProfile /></Layout>} />
-          </Route>
+              {/* Admin Routes */}
+              <Route element={<RoleRoute role="ADMIN" />}>
+                <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+                <Route path="/admin/profile" element={<Layout><AdminProfile /></Layout>} />
+              </Route>
 
-          {/* Protected (any authenticated user) */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Layout><CustomerDashboard /></Layout>} />
-            <Route path="/profile"   element={<Layout><Profile /></Layout>} />
-            <Route path="/orders"    element={<Layout><Orders /></Layout>} />
-            <Route path="/wishlist"  element={<Layout><Wishlist /></Layout>} />
-          </Route>
+              {/* Authenticated Customer Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Layout><CustomerDashboard /></Layout>} />
+                <Route path="/profile" element={<Layout><Profile /></Layout>} />
+                <Route path="/orders" element={<Layout><Orders /></Layout>} />
+                <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
+                <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
+              </Route>
 
-          <Route path="*" element={<Layout><NotFound /></Layout>} />
-          </Routes>
+              <Route path="*" element={<Layout><NotFound /></Layout>} />
+            </Routes>
           </BrowserRouter>
         </WishlistProvider>
       </CartProvider>
