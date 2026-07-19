@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 import { searchProducts, getCategories, addReview } from '../../api/products';
-import { Search, Filter, Star, Package, ShoppingBag, TrendingUp, X, Laptop, Shirt, Home as HomeIcon, BookOpen, Trophy, Sparkles, Gamepad2, Apple, HelpCircle } from 'lucide-react';
+import { Search, Filter, Star, Package, ShoppingBag, TrendingUp, X, Laptop, Shirt, Home as HomeIcon, BookOpen, Trophy, Sparkles, Gamepad2, Apple, HelpCircle, Heart } from 'lucide-react';
 
 const categoryMeta = {
   electronics: {
@@ -86,6 +87,7 @@ const getCategoryMeta = (slug) => {
 function ProductCard({ product, onSelect }) {
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const primaryImage = product.images?.find((i) => i.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl;
   const avgRating = product.reviews?.length
@@ -93,6 +95,8 @@ function ProductCard({ product, onSelect }) {
     : null;
 
   const showAddToCart = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
+  const showWishlist = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
+  const isLiked = isInWishlist(product.id);
 
   return (
     <div 
@@ -110,6 +114,29 @@ function ProductCard({ product, onSelect }) {
         <span className="absolute top-3 left-3 bg-yellow-400/100 backdrop-blur-md text-text-secondary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
           {product.category?.name || 'Uncategorized'}
         </span>
+        {showWishlist && (
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!user) {
+                navigate('/login');
+                return;
+              }
+              try {
+                await toggleWishlist(product);
+              } catch (err) {
+                alert(err.message);
+              }
+            }}
+            className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer backdrop-blur-md shadow-md border ${
+              isLiked
+                ? 'bg-accent-primary border-accent-primary text-white scale-110'
+                : 'bg-black/40 border-white/20 text-white hover:bg-black/60 hover:scale-105'
+            }`}
+          >
+            <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} />
+          </button>
+        )}
       </div>
       <div className="p-5 flex-1 flex flex-col gap-2">
         <p className="text-[11px] text-accent-primary font-bold uppercase tracking-wider">{product.vendor?.storeName}</p>
@@ -158,8 +185,10 @@ function ProductCard({ product, onSelect }) {
 export default function Home() {
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const showAddToCart = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
+  const showWishlist = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
   
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -652,55 +681,82 @@ export default function Home() {
 
               {/* Quantity Selector & Add to Cart */}
               {showAddToCart && selectedProduct.stockQuantity > 0 && (
-                <div className="flex items-center gap-4 mt-6 pt-4 border-t border-glass-border">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Quantity</span>
-                    <div className="flex items-center border border-glass-border rounded-lg bg-bg-tertiary/30 p-1">
-                      <button
-                        type="button"
-                        onClick={() => setModalQty(Math.max(1, modalQty - 1))}
-                        className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        max={selectedProduct.stockQuantity}
-                        value={modalQty}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (!isNaN(val)) {
-                            setModalQty(Math.min(selectedProduct.stockQuantity, Math.max(1, val)));
-                          }
-                        }}
-                        className="w-12 text-center bg-transparent border-none outline-none text-xs font-bold text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setModalQty(Math.min(selectedProduct.stockQuantity, modalQty + 1))}
-                        className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
-                      >
-                        +
-                      </button>
+                <div className="flex flex-col gap-4 mt-6 pt-4 border-t border-glass-border">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Quantity</span>
+                      <div className="flex items-center border border-glass-border rounded-lg bg-bg-tertiary/30 p-1">
+                        <button
+                          type="button"
+                          onClick={() => setModalQty(Math.max(1, modalQty - 1))}
+                          className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max={selectedProduct.stockQuantity}
+                          value={modalQty}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val)) {
+                              setModalQty(Math.min(selectedProduct.stockQuantity, Math.max(1, val)));
+                            }
+                          }}
+                          className="w-12 text-center bg-transparent border-none outline-none text-xs font-bold text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setModalQty(Math.min(selectedProduct.stockQuantity, modalQty + 1))}
+                          className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!user) {
+                          navigate('/login');
+                          return;
+                        }
+                        addToCart(selectedProduct, modalQty);
+                        setAddedFeedback(true);
+                        setTimeout(() => setAddedFeedback(false), 1500);
+                      }}
+                      className="flex-1 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold py-3 rounded-lg shadow-md shadow-accent-primary/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer mt-4"
+                    >
+                      {addedFeedback ? 'Added to Cart ✓' : 'Add to Cart'}
+                    </button>
                   </div>
                   
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!user) {
-                        navigate('/login');
-                        return;
-                      }
-                      addToCart(selectedProduct, modalQty);
-                      setAddedFeedback(true);
-                      setTimeout(() => setAddedFeedback(false), 1500);
-                    }}
-                    className="flex-1 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold py-3 rounded-lg shadow-md shadow-accent-primary/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer mt-4"
-                  >
-                    {addedFeedback ? 'Added to Cart ✓' : 'Add to Cart'}
-                  </button>
+                  {showWishlist && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!user) {
+                          navigate('/login');
+                          return;
+                        }
+                        try {
+                          await toggleWishlist(selectedProduct);
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}
+                      className={`w-12 h-11 flex items-center justify-center rounded-lg border transition-all duration-300 cursor-pointer ${
+                        isInWishlist(selectedProduct.id)
+                          ? 'bg-accent-primary/10 border-accent-primary/30 text-accent-primary'
+                          : 'bg-transparent border-glass-border hover:border-text-secondary text-text-primary'
+                      }`}
+                      title={isInWishlist(selectedProduct.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                    >
+                      <Heart size={18} fill={isInWishlist(selectedProduct.id) ? 'currentColor' : 'none'} />
+                    </button>
+                  )}
                 </div>
               )}
 
