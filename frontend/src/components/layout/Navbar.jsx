@@ -187,7 +187,7 @@ export default function Navbar() {
                       <button
                         onClick={() => {
                           setCartOpen(false);
-                          navigate('/login');
+                          navigate('/checkout');
                         }}
                         className="py-2 text-center rounded-md bg-accent-primary hover:bg-accent-primary-hover text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm shadow-accent-primary/10"
                       >
