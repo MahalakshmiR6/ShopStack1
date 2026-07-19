@@ -37,5 +37,8 @@ export const getPendingProducts = () =>
 export const approveProduct = (id, status) =>
   api.put(`/api/admin/products/${id}/approve`, { status });
 
-export const createCategory = (data) =>
-  api.post('/api/admin/categories', data);
+export const createCategory = (data, parentId) =>
+  api.post('/api/admin/categories', data, { params: parentId ? { parentId } : {} });
+
+export const deleteCategory = (id) =>
+  api.delete(`/api/admin/categories/${id}`);

@@ -116,6 +116,7 @@ export default function Navbar() {
                   onClick={() => {
                     setCartOpen(!cartOpen);
                     setDropdownOpen(false);
+                    navigate("/cart")
                   }}
                   className="relative flex items-center justify-center w-10 h-10 rounded-md border border-glass-border bg-glass backdrop-blur-md text-text-secondary hover:text-text-primary hover:border-accent-primary transition-all duration-300 cursor-pointer"
                 >
@@ -125,77 +126,7 @@ export default function Navbar() {
                       {cartCount}
                     </span>
                   )}
-                </button>
-
-                {cartOpen && (
-                  <div className="absolute right-0 mt-2 w-80 rounded-lg border border-glass-border bg-bg-secondary shadow-2xl py-3 px-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-text-primary flex flex-col gap-3">
-                    <div className="flex items-center justify-between border-b border-glass-border pb-2">
-                      <span className="font-display font-bold text-sm">Shopping Cart</span>
-                      <span className="text-xs text-accent-primary font-semibold">{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}</span>
-                    </div>
-
-                    {/* Cart Items List */}
-                    <div className="flex flex-col gap-3 max-h-60 overflow-y-auto">
-                      {cartItems.length === 0 ? (
-                        <p className="text-xs text-text-muted italic py-4 text-center">Your cart is empty.</p>
-                      ) : (
-                        cartItems.map((item) => {
-                          const primaryImage = item.product.images?.find((i) => i.isPrimary)?.imageUrl || item.product.images?.[0]?.imageUrl;
-                          return (
-                            <div key={item.product.id} className="flex gap-3 items-center">
-                              {primaryImage ? (
-                                <img src={primaryImage} alt={item.product.name} className="w-10 h-10 rounded object-cover shrink-0" />
-                              ) : (
-                                <div className="w-10 h-10 rounded bg-bg-tertiary flex items-center justify-center text-xs font-semibold text-text-secondary shrink-0">
-                                  <Package size={16} />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <h5 className="text-xs font-semibold text-text-primary truncate">{item.product.name}</h5>
-                                <p className="text-[10px] text-text-muted">Qty {item.quantity} • {item.product.brand || 'No Brand'}</p>
-                              </div>
-                              <div className="flex flex-col items-end shrink-0 gap-0.5">
-                                <span className="text-xs font-semibold text-text-primary">₹{(parseFloat(item.product.price) * item.quantity).toFixed(2)}</span>
-                                <button
-                                  onClick={() => removeFromCart(item.product.id)}
-                                  className="text-[10px] text-accent-danger hover:underline cursor-pointer"
-                                >
-                                  Remove
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-
-                    <div className="h-px bg-glass-border my-1" />
-
-                    {/* Summary & Buttons */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-text-secondary">Subtotal</span>
-                      <span className="text-sm font-bold text-text-primary">₹{cartSubtotal.toFixed(2)}</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      <button
-                        onClick={() => setCartOpen(false)}
-                        className="py-2 text-center rounded-md border border-glass-border hover:bg-bg-tertiary text-xs font-semibold transition-colors cursor-pointer text-text-secondary hover:text-text-primary"
-                      >
-                        View Cart
-                      </button>
-                      <button
-                        onClick={() => {
-                          setCartOpen(false);
-                          navigate('/checkout');
-                        }}
-                        className="py-2 text-center rounded-md bg-accent-primary hover:bg-accent-primary-hover text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm shadow-accent-primary/10"
-                      >
-                        Checkout
-                      </button>
-                    </div>
-                  </div>
-                )}
+                </button> 
               </div>
             )}
 

@@ -17,6 +17,7 @@ import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
 import Wishlist from './pages/customer/Wishlist';
 import Checkout from './pages/customer/Checkout';
+import Cart from './pages/customer/Cart';
 import { Unauthorized, NotFound } from './pages/misc/Fallback';
 import './index.css';
 
@@ -38,6 +39,7 @@ export default function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Layout><Home /></Layout>} />
+              <Route path="/cart" element={<Layout><Cart /></Layout>} />
               <Route path="/product/:slug" element={<Layout><ProductDetail /></Layout>} />
               <Route path="/login" element={<Layout><Login /></Layout>} />
               <Route path="/register" element={<Layout><Register /></Layout>} />

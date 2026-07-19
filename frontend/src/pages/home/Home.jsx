@@ -86,7 +86,7 @@ const getCategoryMeta = (slug) => {
 
 function ProductCard({ product, onSelect }) {
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { cartItems, addToCart, updateQuantity } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const primaryImage = product.images?.find((i) => i.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl;
@@ -98,9 +98,12 @@ function ProductCard({ product, onSelect }) {
   const showWishlist = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
   const isLiked = isInWishlist(product.id);
 
+  const cartItem = cartItems.find((item) => item.product.id === product.id);
+  const cartQty = cartItem ? cartItem.quantity : 0;
+
   return (
-    <div 
-      onClick={() => onSelect(product)} 
+    <div
+      onClick={() => onSelect(product)}
       className="group flex flex-col overflow-hidden rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-accent-primary/20 hover:shadow-xl hover:shadow-accent-primary-glow/10 cursor-pointer"
     >
       <div className="relative aspect-[4/3] bg-bg-tertiary overflow-hidden">
@@ -128,11 +131,10 @@ function ProductCard({ product, onSelect }) {
                 alert(err.message);
               }
             }}
-            className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer backdrop-blur-md shadow-md border ${
-              isLiked
-                ? 'bg-accent-primary border-accent-primary text-white scale-110'
-                : 'bg-black/40 border-white/20 text-white hover:bg-black/60 hover:scale-105'
-            }`}
+            className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer backdrop-blur-md shadow-md border ${isLiked
+              ? 'bg-accent-primary border-accent-primary text-white scale-110'
+              : 'bg-black/40 border-white/20 text-white hover:bg-black/60 hover:scale-105'
+              }`}
           >
             <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} />
           </button>
@@ -142,31 +144,58 @@ function ProductCard({ product, onSelect }) {
         <p className="text-[11px] text-accent-primary font-bold uppercase tracking-wider">{product.vendor?.storeName}</p>
         <h3 className="text-sm font-bold text-text-primary line-clamp-2 min-h-[40px]">{product.name}</h3>
         {product.brand && <p className="text-xs text-text-muted">{product.brand}</p>}
-        
+
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-glass-border gap-2">
           <div className="flex flex-col">
             <span className="font-display text-sm font-extrabold text-accent-secondary">₹{parseFloat(product.price).toFixed(2)}</span>
             <span className="flex items-center gap-1 text-[10px] font-bold text-accent-warning mt-0.5">
-              <Star size={11} fill={avgRating ? "currentColor" : "none"} className={avgRating ? "text-accent-warning" : "text-text-muted"} /> 
+              <Star size={11} fill={avgRating ? "currentColor" : "none"} className={avgRating ? "text-accent-warning" : "text-text-muted"} />
               {avgRating ? avgRating : "No ratings"}
             </span>
           </div>
 
           {product.stockQuantity > 0 ? (
             showAddToCart ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!user) {
-                    navigate('/login');
-                    return;
-                  }
-                  addToCart(product, 1);
-                }}
-                className="px-3.5 py-2 rounded-lg bg-accent-primary/10 border border-accent-primary/20 hover:bg-accent-primary hover:text-white text-[10px] font-bold text-accent-primary transition-all duration-300 cursor-pointer"
-              >
-                Add to Cart
-              </button>
+              cartQty > 0 ? (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center border border-accent-primary/40 rounded-lg bg-accent-primary/10 p-0.5"
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateQuantity(product, cartQty - 1);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent-primary/20 text-accent-primary font-bold text-xs cursor-pointer transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="w-7 text-center text-xs font-extrabold text-accent-primary">{cartQty}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateQuantity(product, cartQty + 1);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent-primary/20 text-accent-primary font-bold text-xs cursor-pointer transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!user) {
+                      navigate('/login');
+                      return;
+                    }
+                    addToCart(product, 1);
+                  }}
+                  className="px-3.5 py-2 rounded-lg bg-accent-primary/10 border border-accent-primary/20 hover:bg-accent-primary hover:text-white text-[10px] font-bold text-accent-primary transition-all duration-300 cursor-pointer"
+                >
+                  Add to Cart
+                </button>
+              )
             ) : (
               <span className="text-[10px] font-bold text-accent-secondary">In Stock</span>
             )
@@ -189,7 +218,7 @@ export default function Home() {
   const navigate = useNavigate();
   const showAddToCart = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
   const showWishlist = !user || (user.role !== 'ADMIN' && user.role !== 'VENDOR');
-  
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,7 +226,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  
+
   // Modal State
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalQty, setModalQty] = useState(1);
@@ -234,7 +263,7 @@ export default function Home() {
   }, [query, selectedCategory, minPrice, maxPrice]);
 
   useEffect(() => {
-    getCategories().then((r) => setCategories(r.data)).catch(() => {});
+    getCategories().then((r) => setCategories(r.data)).catch(() => { });
     fetchProducts();
   }, [fetchProducts]);
 
@@ -245,7 +274,7 @@ export default function Home() {
     setReviewLoading(true);
     try {
       const res = await addReview(selectedProduct.id, newRating, newComment);
-      
+
       // Update selected product reviews locally
       const updatedReview = {
         ...res.data,
@@ -336,20 +365,18 @@ export default function Home() {
                     setSelectedCategory(newCategory);
                     document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className={`group flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-300 cursor-pointer text-center h-28 relative overflow-hidden ${
-                    isSelected
-                      ? meta.activeBg
-                      : `bg-glass/10 border-glass-border ${meta.gradient} ${meta.borderColor} hover:shadow-lg hover:-translate-y-1`
-                  }`}
+                  className={`group flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-300 cursor-pointer text-center h-28 relative overflow-hidden ${isSelected
+                    ? meta.activeBg
+                    : `bg-glass/10 border-glass-border ${meta.gradient} ${meta.borderColor} hover:shadow-lg hover:-translate-y-1`
+                    }`}
                 >
                   {/* Decorative background shape */}
                   <span className={`absolute -right-3 -bottom-3 w-10 h-10 rounded-full opacity-[0.04] transition-transform duration-500 group-hover:scale-150 ${isSelected ? 'bg-white' : 'bg-current'}`} />
-                  
+
                   <IconComponent
                     size={24}
-                    className={`mb-2.5 transition-transform duration-300 group-hover:scale-110 ${
-                      isSelected ? meta.activeIconColor : meta.iconColor
-                    }`}
+                    className={`mb-2.5 transition-transform duration-300 group-hover:scale-110 ${isSelected ? meta.activeIconColor : meta.iconColor
+                      }`}
                   />
                   <span className="text-[11px] font-bold tracking-tight leading-snug line-clamp-2">
                     {category.name}
@@ -466,17 +493,17 @@ export default function Home() {
 
       {/* Product Details Modal */}
       {selectedProduct && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200"
           onClick={() => setSelectedProduct(null)}
         >
-          <div 
+          <div
             className="bg-bg-secondary border border-glass-border rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl text-text-primary grid grid-cols-1 md:grid-cols-2 animate-in zoom-in-95 duration-300 relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
-            <button 
-              onClick={() => setSelectedProduct(null)} 
+            <button
+              onClick={() => setSelectedProduct(null)}
               className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-colors cursor-pointer"
             >
               <X size={18} />
@@ -485,12 +512,12 @@ export default function Home() {
             {/* Left Column: Product Image */}
             <div className="relative bg-bg-tertiary aspect-[4/3] md:aspect-auto flex items-center justify-center p-8 overflow-hidden min-h-[300px]">
               <div className="absolute inset-0 bg-gradient-to-tr from-accent-primary/10 to-accent-secondary/5 blur-[50px] pointer-events-none" />
-              
+
               {selectedProduct.images?.find((i) => i.isPrimary)?.imageUrl || selectedProduct.images?.[0]?.imageUrl ? (
-                <img 
-                  src={selectedProduct.images?.find((i) => i.isPrimary)?.imageUrl || selectedProduct.images?.[0]?.imageUrl} 
-                  alt={selectedProduct.name} 
-                  className="max-h-full max-w-full object-contain rounded-2xl shadow-md transform hover:scale-[1.02] transition-transform duration-300 z-10" 
+                <img
+                  src={selectedProduct.images?.find((i) => i.isPrimary)?.imageUrl || selectedProduct.images?.[0]?.imageUrl}
+                  alt={selectedProduct.name}
+                  className="max-h-full max-w-full object-contain rounded-2xl shadow-md transform hover:scale-[1.02] transition-transform duration-300 z-10"
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-text-muted gap-2 z-10">
@@ -519,7 +546,7 @@ export default function Home() {
                 <h2 className="text-2xl font-extrabold text-text-primary tracking-tight leading-tight mb-2 font-display">
                   {selectedProduct.name}
                 </h2>
-                
+
                 {/* Vendor Store Info */}
                 <p className="text-xs text-text-secondary font-medium mb-4 flex items-center gap-1">
                   Sold by:{' '}
@@ -536,11 +563,11 @@ export default function Home() {
                         ? selectedProduct.reviews.reduce((s, r) => s + r.rating, 0) / selectedProduct.reviews.length
                         : 0;
                       return (
-                        <Star 
-                          key={i} 
-                          size={15} 
-                          fill={i < Math.round(avg) ? "currentColor" : "none"} 
-                          className={i < Math.round(avg) ? "text-accent-warning" : "text-text-muted"} 
+                        <Star
+                          key={i}
+                          size={15}
+                          fill={i < Math.round(avg) ? "currentColor" : "none"}
+                          className={i < Math.round(avg) ? "text-accent-warning" : "text-text-muted"}
                         />
                       );
                     })}
@@ -565,6 +592,109 @@ export default function Home() {
                   </p>
                 </div>
 
+                {/* Price & Action */}
+                <div className="pt-4 border-t border-glass-border flex items-center justify-between gap-4 mt-6">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Price</span>
+                    <span className="font-display text-2xl font-extrabold text-accent-secondary">
+                      ₹{parseFloat(selectedProduct.price).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">Stock Status</span>
+                    {selectedProduct.stockQuantity > 0 ? (
+                      <span className="bg-accent-secondary/10 border border-accent-secondary/20 text-accent-secondary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        In Stock ({selectedProduct.stockQuantity})
+                      </span>
+                    ) : (
+                      <span className="bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        Out of Stock
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quantity Selector & Add to Cart */}
+                {showAddToCart && selectedProduct.stockQuantity > 0 && (
+                  <div className="flex flex-col gap-4 mt-6 pt-4 border-t border-glass-border">
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Quantity</span>
+                        <div className="flex items-center border border-glass-border rounded-lg bg-bg-tertiary/30 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setModalQty(Math.max(1, modalQty - 1))}
+                            className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            max={selectedProduct.stockQuantity}
+                            value={modalQty}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value);
+                              if (!isNaN(val)) {
+                                setModalQty(Math.min(selectedProduct.stockQuantity, Math.max(1, val)));
+                              }
+                            }}
+                            className="w-12 text-center bg-transparent border-none outline-none text-xs font-bold text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setModalQty(Math.min(selectedProduct.stockQuantity, modalQty + 1))}
+                            className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!user) {
+                            navigate('/login');
+                            return;
+                          }
+                          addToCart(selectedProduct, modalQty);
+                          setAddedFeedback(true);
+                          setTimeout(() => setAddedFeedback(false), 1500);
+                        }}
+                        className="flex-1 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold py-3 rounded-lg shadow-md shadow-accent-primary/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer mt-4"
+                      >
+                        {addedFeedback ? 'Added to Cart ✓' : 'Add to Cart'}
+                      </button>
+                    </div>
+
+                    {showWishlist && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!user) {
+                            navigate('/login');
+                            return;
+                          }
+                          try {
+                            await toggleWishlist(selectedProduct);
+                          } catch (err) {
+                            alert(err.message);
+                          }
+                        }}
+                        className={`w-12 h-11 flex items-center justify-center rounded-lg border transition-all duration-300 cursor-pointer ${isInWishlist(selectedProduct.id)
+                          ? 'bg-accent-primary/10 border-accent-primary/30 text-accent-primary'
+                          : 'bg-transparent border-glass-border hover:border-text-secondary text-text-primary'
+                          }`}
+                        title={isInWishlist(selectedProduct.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                      >
+                        <Heart size={18} fill={isInWishlist(selectedProduct.id) ? 'currentColor' : 'none'} />
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Reviews List */}
                 <div className="mb-6">
                   <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Customer Reviews</h4>
@@ -580,11 +710,11 @@ export default function Home() {
                             </span>
                             <div className="flex items-center gap-0.5 text-accent-warning">
                               {[...Array(5)].map((_, starIdx) => (
-                                <Star 
-                                  key={starIdx} 
-                                  size={10} 
-                                  fill={starIdx < r.rating ? "currentColor" : "none"} 
-                                  className={starIdx < r.rating ? "text-accent-warning" : "text-text-muted"} 
+                                <Star
+                                  key={starIdx}
+                                  size={10}
+                                  fill={starIdx < r.rating ? "currentColor" : "none"}
+                                  className={starIdx < r.rating ? "text-accent-warning" : "text-text-muted"}
                                 />
                               ))}
                             </div>
@@ -604,7 +734,7 @@ export default function Home() {
                       {reviewError && (
                         <p className="text-xs text-accent-danger font-medium">{reviewError}</p>
                       )}
-                      
+
                       {/* Interactive Star Picker */}
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs text-text-secondary font-medium">Rating:</span>
@@ -616,10 +746,10 @@ export default function Home() {
                               className="cursor-pointer transition-transform hover:scale-110 focus:outline-none"
                               onClick={() => setNewRating(star)}
                             >
-                              <Star 
-                                size={18} 
-                                fill={star <= newRating ? "currentColor" : "none"} 
-                                className={star <= newRating ? "text-accent-warning" : "text-text-muted"} 
+                              <Star
+                                size={18}
+                                fill={star <= newRating ? "currentColor" : "none"}
+                                className={star <= newRating ? "text-accent-warning" : "text-text-muted"}
                               />
                             </button>
                           ))}
@@ -655,111 +785,6 @@ export default function Home() {
                   )}
                 </div>
               </div>
-
-              {/* Price & Action */}
-              <div className="pt-4 border-t border-glass-border flex items-center justify-between gap-4 mt-6">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Price</span>
-                  <span className="font-display text-2xl font-extrabold text-accent-secondary">
-                    ₹{parseFloat(selectedProduct.price).toFixed(2)}
-                  </span>
-                </div>
-                
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">Stock Status</span>
-                  {selectedProduct.stockQuantity > 0 ? (
-                    <span className="bg-accent-secondary/10 border border-accent-secondary/20 text-accent-secondary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                      In Stock ({selectedProduct.stockQuantity})
-                    </span>
-                  ) : (
-                    <span className="bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                      Out of Stock
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Quantity Selector & Add to Cart */}
-              {showAddToCart && selectedProduct.stockQuantity > 0 && (
-                <div className="flex flex-col gap-4 mt-6 pt-4 border-t border-glass-border">
-                  <div className="flex items-center gap-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Quantity</span>
-                      <div className="flex items-center border border-glass-border rounded-lg bg-bg-tertiary/30 p-1">
-                        <button
-                          type="button"
-                          onClick={() => setModalQty(Math.max(1, modalQty - 1))}
-                          className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          max={selectedProduct.stockQuantity}
-                          value={modalQty}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            if (!isNaN(val)) {
-                              setModalQty(Math.min(selectedProduct.stockQuantity, Math.max(1, val)));
-                            }
-                          }}
-                          className="w-12 text-center bg-transparent border-none outline-none text-xs font-bold text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setModalQty(Math.min(selectedProduct.stockQuantity, modalQty + 1))}
-                          className="w-8 h-8 flex items-center justify-center rounded hover:bg-bg-tertiary text-text-primary font-bold cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!user) {
-                          navigate('/login');
-                          return;
-                        }
-                        addToCart(selectedProduct, modalQty);
-                        setAddedFeedback(true);
-                        setTimeout(() => setAddedFeedback(false), 1500);
-                      }}
-                      className="flex-1 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold py-3 rounded-lg shadow-md shadow-accent-primary/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer mt-4"
-                    >
-                      {addedFeedback ? 'Added to Cart ✓' : 'Add to Cart'}
-                    </button>
-                  </div>
-                  
-                  {showWishlist && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!user) {
-                          navigate('/login');
-                          return;
-                        }
-                        try {
-                          await toggleWishlist(selectedProduct);
-                        } catch (err) {
-                          alert(err.message);
-                        }
-                      }}
-                      className={`w-12 h-11 flex items-center justify-center rounded-lg border transition-all duration-300 cursor-pointer ${
-                        isInWishlist(selectedProduct.id)
-                          ? 'bg-accent-primary/10 border-accent-primary/30 text-accent-primary'
-                          : 'bg-transparent border-glass-border hover:border-text-secondary text-text-primary'
-                      }`}
-                      title={isInWishlist(selectedProduct.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                    >
-                      <Heart size={18} fill={isInWishlist(selectedProduct.id) ? 'currentColor' : 'none'} />
-                    </button>
-                  )}
-                </div>
-              )}
-
             </div>
           </div>
         </div>
