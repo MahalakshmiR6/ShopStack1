@@ -116,14 +116,23 @@ public class OrderService {
         }
 
 
+        String shipping = request.getShippingAddress();
+        if (shipping == null || shipping.isBlank()) {
+            shipping = "Address not specified";
+        }
+        String billing = request.getBillingAddress();
+        if (billing == null || billing.isBlank()) {
+            billing = shipping;
+        }
+
         Order order = Order.builder()
                 .user(user)
                 .subtotal(subtotal)
                 .discount(discount)
                 .finalAmount(finalAmount)
-                .shippingAddress(request.getShippingAddress())
-                .billingAddress(request.getBillingAddress())
-                .paymentMethod(request.getPaymentMethod())
+                .shippingAddress(shipping)
+                .billingAddress(billing)
+                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "COD")
                 .paymentStatus("PAID")
                 .trackingStatus("PLACED")
                 .transactionId(transactionId)
