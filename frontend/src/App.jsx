@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 import { ProtectedRoute, RoleRoute } from './components/guards/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Login from './pages/auth/Login';
@@ -13,6 +14,7 @@ import AdminProfile from './pages/admin/AdminProfile';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
+import Wishlist from './pages/customer/Wishlist';
 import { Unauthorized, NotFound } from './pages/misc/Fallback';
 import './index.css';
 
@@ -29,8 +31,9 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <BrowserRouter>
-        <Routes>
+        <WishlistProvider>
+          <BrowserRouter>
+          <Routes>
           {/* Public */}
           <Route path="/"         element={<Layout><Home /></Layout>} />
           <Route path="/login"    element={<Layout><Login /></Layout>} />
@@ -54,11 +57,13 @@ export default function App() {
             <Route path="/dashboard" element={<Layout><CustomerDashboard /></Layout>} />
             <Route path="/profile"   element={<Layout><Profile /></Layout>} />
             <Route path="/orders"    element={<Layout><Orders /></Layout>} />
+            <Route path="/wishlist"  element={<Layout><Wishlist /></Layout>} />
           </Route>
 
           <Route path="*" element={<Layout><NotFound /></Layout>} />
-        </Routes>
-        </BrowserRouter>
+          </Routes>
+          </BrowserRouter>
+        </WishlistProvider>
       </CartProvider>
     </AuthProvider>
   );

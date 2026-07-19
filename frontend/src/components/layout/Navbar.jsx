@@ -1,25 +1,29 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { 
-  LayoutDashboard, 
-  LogOut, 
-  Package, 
-  User, 
-  ChevronDown, 
-  ShoppingBag, 
-  Search, 
-  ShoppingCart
+import { useWishlist } from '../../context/WishlistContext';
+
+import {
+  LayoutDashboard,
+  LogOut,
+  Package,
+  User,
+  ChevronDown,
+  ShoppingBag,
+  Search,
+  ShoppingCart,
+  Heart
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { cartItems, removeFromCart, cartCount, cartSubtotal } = useCart();
+  const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
 
   const avatar = user?.profilePictureUrl;
-  
+
   // Dropdown states
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -61,7 +65,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-bg-primary/85 backdrop-blur-xl border-b border-glass-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          
+
           {/* Logo & Main Nav Links */}
           <div className="flex items-center gap-6 shrink-0">
             <Link to="/" className="flex items-center gap-2 font-display font-extrabold text-xl text-text-primary shrink-0">
@@ -71,16 +75,16 @@ export default function Navbar() {
 
             {/* Nav Links (Desktop) */}
             <div className="hidden md:flex items-center gap-1.5">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="text-text-secondary text-sm font-medium px-3 py-2 rounded-md hover:text-text-primary hover:bg-bg-tertiary transition-all duration-300"
               >
                 Marketplace
               </Link>
-              
+
               {user && getDashboardLink() && (
-                <Link 
-                  to={getDashboardLink()} 
+                <Link
+                  to={getDashboardLink()}
                   className="flex items-center gap-1.5 text-text-secondary text-sm font-medium px-3 py-2 rounded-md hover:text-text-primary hover:bg-bg-tertiary transition-all duration-300"
                 >
                   <LayoutDashboard size={14} />
@@ -104,7 +108,7 @@ export default function Navbar() {
 
           {/* Right side actions: Cart & Profile */}
           <div className="flex items-center gap-3 shrink-0">
-            
+
             {/* Shopping Cart Button & Dropdown */}
             {user && user.role === 'CUSTOMER' && (
               <div className="relative" ref={cartRef}>
@@ -129,7 +133,7 @@ export default function Navbar() {
                       <span className="font-display font-bold text-sm">Shopping Cart</span>
                       <span className="text-xs text-accent-primary font-semibold">{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}</span>
                     </div>
-                    
+
                     {/* Cart Items List */}
                     <div className="flex flex-col gap-3 max-h-60 overflow-y-auto">
                       {cartItems.length === 0 ? (
@@ -174,13 +178,13 @@ export default function Navbar() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mt-1">
-                      <button 
+                      <button
                         onClick={() => setCartOpen(false)}
                         className="py-2 text-center rounded-md border border-glass-border hover:bg-bg-tertiary text-xs font-semibold transition-colors cursor-pointer text-text-secondary hover:text-text-primary"
                       >
                         View Cart
                       </button>
-                      <button 
+                      <button
                         onClick={() => {
                           setCartOpen(false);
                           navigate('/login');
@@ -195,7 +199,21 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* User Profile / Dropdown or Login Options */}
+            {/* Wishlist Button */}
+            {user && user.role === 'CUSTOMER' && (
+              <Link
+                to="/wishlist"
+                className="relative flex items-center justify-center w-10 h-10 rounded-md border border-glass-border bg-glass backdrop-blur-md text-text-secondary hover:text-text-primary hover:border-accent-primary transition-all duration-300 cursor-pointer"
+              >
+                <Heart size={18} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-accent-primary text-[10px] font-bold text-white shadow-sm animate-in zoom-in duration-200">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+            )}
+            
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
