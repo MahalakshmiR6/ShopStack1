@@ -1,8 +1,8 @@
 import api from './client';
 
 // Create Razorpay payment session
-export const createPaymentSession = (amount) =>
-  api.post('/api/orders/create-payment-session', { amount });
+export const createPaymentSession = (data) =>
+  api.post('/api/orders/create-payment-session', typeof data === 'object' ? data : { items: [] });
 
 // Place Checkout Order
 export const checkoutOrder = (data) =>
