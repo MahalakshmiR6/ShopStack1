@@ -30,6 +30,17 @@ export function WishlistProvider({ children }) {
     fetchWishlist();
   }, [fetchWishlist]);
 
+  const removeFromWishlist = useCallback(async (productId) => {
+    if (!user) return;
+    try {
+      await apiRemoveFromWishlist(productId);
+      setWishlistItems(prev => prev.filter(item => item.product.id !== productId));
+    } catch (err) {
+      console.error('Failed to remove from wishlist:', err);
+      throw new Error(err.response?.data?.error || 'Failed to remove from wishlist');
+    }
+  }, [user]);
+
   const toggleWishlist = useCallback(async (product) => {
     if (!user) {
       throw new Error('Please login to use the wishlist');
@@ -62,6 +73,7 @@ export function WishlistProvider({ children }) {
     wishlistItems,
     loading,
     toggleWishlist,
+    removeFromWishlist,
     isInWishlist,
     wishlistCount,
     refetchWishlist: fetchWishlist

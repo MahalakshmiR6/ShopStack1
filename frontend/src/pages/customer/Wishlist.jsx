@@ -4,7 +4,7 @@ import { Heart, Trash2, ShoppingCart, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Wishlist() {
-  const { wishlistItems, toggleWishlist, loading } = useWishlist();
+  const { wishlistItems, toggleWishlist, removeFromWishlist, loading } = useWishlist();
   const { addToCart } = useCart();
 
   const handleRemove = async (e, product) => {
@@ -13,6 +13,16 @@ export default function Wishlist() {
       await toggleWishlist(product);
     } catch (err) {
       alert(err.message || 'Failed to remove from wishlist');
+    }
+  };
+
+  const handleAddToCart = async (e, product) => {
+    e.stopPropagation();
+    try {
+      await addToCart(product, 1);
+      await removeFromWishlist(product.id);
+    } catch (err) {
+      console.error('Failed to move item to cart:', err);
     }
   };
 
@@ -94,7 +104,7 @@ export default function Wishlist() {
                       
                       {product.stockQuantity > 0 ? (
                         <button
-                          onClick={() => addToCart(product, 1)}
+                          onClick={(e) => handleAddToCart(e, product)}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent-primary/10 border border-accent-primary/20 hover:bg-accent-primary hover:text-white text-[10px] font-bold text-accent-primary transition-all duration-300 cursor-pointer"
                         >
                           <ShoppingCart size={12} />
