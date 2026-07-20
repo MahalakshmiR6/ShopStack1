@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { getAllVendors, updateVendorStatus, getCustomerCount, getAllCustomers, toggleUserStatus } from '../../api/vendors';
-import { getPendingProducts, approveProduct } from '../../api/products';
+import { getPendingProducts, approveProduct, searchProducts } from '../../api/products';
 import { getAdminOrders, updateOrderStatus } from '../../api/orders';
-import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag } from 'lucide-react';
+import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers } from 'lucide-react';
 import OrderTracker from '../../components/orders/OrderTracker';
+import InventoryManager from '../../components/inventory/InventoryManager';
 
 export default function AdminDashboard() {
   const [customerCount, setCustomerCount] = useState(0);
   const [vendors, setVendors] = useState([]);
   const [pendingProducts, setPendingProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [adminOrders, setAdminOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,14 +24,16 @@ export default function AdminDashboard() {
       getPendingProducts(),
       getCustomerCount(),
       getAllCustomers(),
-      getAdminOrders()
+      getAdminOrders(),
+      searchProducts({})
     ])
-      .then(([vRes, pRes, ccRes, cRes, oRes]) => {   
+      .then(([vRes, pRes, ccRes, cRes, oRes, prodRes]) => {   
         setCustomers(cRes.data);
         setVendors(vRes.data);
         setPendingProducts(pRes.data);
         setCustomerCount(ccRes.data);
         setAdminOrders(oRes.data);
+        setAllProducts(prodRes.data || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -159,6 +163,22 @@ export default function AdminDashboard() {
             <Truck size={15} />
             <span>All Platform Orders</span>
             {adminOrders.length > 0 && <span className="bg-accent-secondary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{adminOrders.length}</span>}
+          </button>
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === 'inventory'
+                ? 'border-accent-primary text-accent-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+            onClick={() => setActiveTab('inventory')}
+          >
+            <Layers size={15} />
+            <span>Inventory Control</span>
+            {allProducts.filter(p => p.stockQuantity <= 5).length > 0 && (
+              <span className="bg-amber-500 text-black text-[10px] px-2 py-0.5 rounded-full font-extrabold ml-1">
+                {allProducts.filter(p => p.stockQuantity <= 5).length} alert
+              </span>
+            )}
           </button>
         </div>
 
@@ -487,6 +507,19 @@ export default function AdminDashboard() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Inventory Control Tab */}
+        {activeTab === 'inventory' && (
+          <div className="flex flex-col gap-4">
+            <InventoryManager
+              products={allProducts}
+              userRole="ADMIN"
+              onProductUpdate={(updatedProduct) => {
+                setAllProducts((prev) => prev.map((p) => p.id === updatedProduct.id ? updatedProduct : p));
+              }}
+            />
           </div>
         )}
       </div>

@@ -84,6 +84,40 @@ public class ProductController {
         }
     }
 
+    @PutMapping("/api/vendor/products/{id}/stock")
+    public ResponseEntity<?> updateVendorStock(
+            @PathVariable("id") UUID id,
+            @RequestBody Map<String, Object> request) {
+        try {
+            User user = getCurrentUser();
+            Number stockQuantityNum = (Number) request.get("stockQuantity");
+            if (stockQuantityNum == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "stockQuantity is required"));
+            }
+            Product updated = productService.updateStockQuantity(user, id, stockQuantityNum.intValue());
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/api/admin/products/{id}/stock")
+    public ResponseEntity<?> updateAdminStock(
+            @PathVariable("id") UUID id,
+            @RequestBody Map<String, Object> request) {
+        try {
+            User user = getCurrentUser();
+            Number stockQuantityNum = (Number) request.get("stockQuantity");
+            if (stockQuantityNum == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "stockQuantity is required"));
+            }
+            Product updated = productService.updateStockQuantity(user, id, stockQuantityNum.intValue());
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/api/vendor/products")
     public ResponseEntity<?> getVendorProducts() {
         try {

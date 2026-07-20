@@ -96,6 +96,28 @@ public class ProductService {
     }
 
     @Transactional
+    public Product updateStockQuantity(User user, UUID productId, Integer newStockQuantity) {
+        if (newStockQuantity < 0) {
+            throw new IllegalArgumentException("Stock quantity cannot be negative");
+        }
+
+        Product existing = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found!"));
+
+        boolean isAdmin = user.getRole() == Role.ADMIN;
+        boolean isVendor = existing.getVendor() != null &&
+                existing.getVendor().getUser() != null &&
+                existing.getVendor().getUser().getId().equals(user.getId());
+
+        if (!isAdmin && !isVendor) {
+            throw new SecurityException("Unauthorized to update inventory stock for this product");
+        }
+
+        existing.setStockQuantity(newStockQuantity);
+        return productRepository.save(existing);
+    }
+
+    @Transactional
     public Product submitForApproval(UUID vendorUserId, UUID productId) {
         Product existing = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found!"));

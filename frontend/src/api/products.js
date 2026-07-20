@@ -37,6 +37,13 @@ export const getPendingProducts = () =>
 export const approveProduct = (id, status) =>
   api.put(`/api/admin/products/${id}/approve`, { status });
 
+// Stock Management
+export const updateVendorStock = (id, stockQuantity) =>
+  api.put(`/api/vendor/products/${id}/stock`, { stockQuantity });
+
+export const updateAdminStock = (id, stockQuantity) =>
+  api.put(`/api/admin/products/${id}/stock`, { stockQuantity });
+
 export const createCategory = (data, parentId) =>
   api.post('/api/admin/categories', data, { params: parentId ? { parentId } : {} });
 

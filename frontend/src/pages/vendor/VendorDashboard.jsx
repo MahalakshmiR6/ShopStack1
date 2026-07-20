@@ -4,8 +4,9 @@ import { getVendorProducts, createProduct, updateProduct, submitProductForApprov
 import { getVendorProfile } from '../../api/vendors';
 import { getVendorOrders, updateOrderStatus } from '../../api/orders';
 import { uploadProductImage } from '../../api/upload';
-import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye } from 'lucide-react';
+import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers } from 'lucide-react';
 import OrderTracker from '../../components/orders/OrderTracker';
+import InventoryManager from '../../components/inventory/InventoryManager';
 
 const STATUS_META = {
   DRAFT:            { label: 'Draft',            cls: 'bg-text-secondary/10 border-text-secondary/20 text-text-secondary', Icon: Edit },
@@ -233,6 +234,22 @@ export default function VendorDashboard() {
             <Truck size={16} />
             <span>Order Fulfillment & Tracking</span>
             {vendorOrders.length > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{vendorOrders.length}</span>}
+          </button>
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === 'inventory'
+                ? 'border-accent-primary text-accent-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+            onClick={() => setActiveTab('inventory')}
+          >
+            <Layers size={16} />
+            <span>Inventory Stock</span>
+            {products.filter(p => p.stockQuantity <= 5).length > 0 && (
+              <span className="bg-amber-500 text-black text-[10px] px-2 py-0.5 rounded-full font-extrabold ml-1">
+                {products.filter(p => p.stockQuantity <= 5).length} alert
+              </span>
+            )}
           </button>
         </div>
 
@@ -528,6 +545,19 @@ export default function VendorDashboard() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab 3: Inventory Stock Management */}
+        {activeTab === 'inventory' && (
+          <div className="flex flex-col gap-4">
+            <InventoryManager
+              products={products}
+              userRole="VENDOR"
+              onProductUpdate={(updatedProduct) => {
+                setProducts((prev) => prev.map((p) => p.id === updatedProduct.id ? updatedProduct : p));
+              }}
+            />
           </div>
         )}
       </div>
