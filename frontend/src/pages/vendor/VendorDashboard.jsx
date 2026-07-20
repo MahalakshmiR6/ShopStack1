@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getVendorProducts, createProduct, updateProduct, submitProductForApproval, getCategories } from '../../api/products';
 import { getVendorProfile } from '../../api/vendors';
+import { getVendorOrders, updateOrderStatus } from '../../api/orders';
 import { uploadProductImage } from '../../api/upload';
-import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star } from 'lucide-react';
+import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye } from 'lucide-react';
+import OrderTracker from '../../components/orders/OrderTracker';
 
 const STATUS_META = {
   DRAFT:            { label: 'Draft',            cls: 'bg-text-secondary/10 border-text-secondary/20 text-text-secondary', Icon: Edit },
@@ -19,9 +21,12 @@ const EMPTY_FORM = {
 export default function VendorDashboard() {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
+  const [vendorOrders, setVendorOrders] = useState([]);
   const [categories, setCategories] = useState([]);
   const [vendorProfile, setVendorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('products');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState('');
@@ -29,6 +34,7 @@ export default function VendorDashboard() {
   const [editingProductId, setEditingProductId] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -61,6 +67,10 @@ export default function VendorDashboard() {
       .catch((err) => console.error("Failed to load profile:", err))
       .finally(() => { if (active) setLoading(false); });
 
+    getVendorOrders()
+      .then((res) => { if (active) setVendorOrders(res.data); })
+      .catch((err) => console.error("Failed to load vendor orders:", err));
+
     return () => { active = false; };
   }, []);
 
@@ -83,11 +93,9 @@ export default function VendorDashboard() {
       
       let res;
       if (editingProductId) {
-        // Update existing product
         res = await updateProduct(editingProductId, data, form.categoryId || null);
         setProducts((prev) => prev.map((p) => p.id === editingProductId ? res.data : p));
       } else {
-        // Create new product
         res = await createProduct(data, form.categoryId || null);
         setProducts((prev) => [res.data, ...prev]);
       }
@@ -131,11 +139,20 @@ export default function VendorDashboard() {
     setEditingProductId(null);
   };
 
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      const res = await updateOrderStatus(orderId, newStatus);
+      setVendorOrders((prev) => prev.map((o) => o.id === orderId ? res.data : o));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update order status.');
+    }
+  };
+
   // Stats
   const approved  = products.filter((p) => p.status === 'APPROVED').length;
   const pending   = products.filter((p) => p.status === 'PENDING_APPROVAL').length;
   const totalVal  = products.filter((p) => p.status === 'APPROVED')
-    .reduce((s, p) => s + parseFloat(p.price) * p.stockQuantity,0);
+    .reduce((s, p) => s + parseFloat(p.price) * p.stockQuantity, 0);
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary py-10 pb-20">
@@ -174,7 +191,7 @@ export default function VendorDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {[
             { icon: Package,    label: 'Total Products',  value: products.length,   bg: 'bg-accent-primary/10 text-accent-primary', subtext: 'In your catalog' },
-            { icon: CheckCircle,label: 'Approved',        value: approved,          bg: 'bg-accent-secondary/10 text-accent-secondary', subtext: 'Ready for sale' },
+            { icon: ShoppingBag,label: 'Customer Orders', value: vendorOrders.length,bg: 'bg-accent-secondary/10 text-accent-secondary', subtext: 'Received orders' },
             { icon: Clock,      label: 'Pending Review',  value: pending,           bg: 'bg-accent-warning/10 text-accent-warning', subtext: 'Awaiting admin' },
             { icon: IndianRupee, label: 'Inventory Value', value: `₹${totalVal.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, bg: 'bg-purple-500/10 text-purple-600', subtext: 'Total (Price × Stock)' },
           ].map(({ icon: Icon, label, value, bg, subtext }) => (
@@ -189,6 +206,34 @@ export default function VendorDashboard() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-glass-border mb-6">
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === 'products'
+                ? 'border-accent-primary text-accent-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+            onClick={() => setActiveTab('products')}
+          >
+            <Package size={16} />
+            <span>My Products</span>
+            <span className="bg-bg-tertiary text-text-primary text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{products.length}</span>
+          </button>
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === 'orders'
+                ? 'border-accent-primary text-accent-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+            onClick={() => setActiveTab('orders')}
+          >
+            <Truck size={16} />
+            <span>Order Fulfillment & Tracking</span>
+            {vendorOrders.length > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{vendorOrders.length}</span>}
+          </button>
         </div>
 
         {/* Create product form */}
@@ -289,93 +334,202 @@ export default function VendorDashboard() {
           </div>
         )}
 
-        {/* Products list */}
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-bold text-text-primary">My Products</h2>
-          {loading ? (
-            <p className="text-sm text-text-muted">Loading products…</p>
-          ) : products.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-16 border border-glass-border rounded-xl bg-glass/5 text-text-muted">
-              <Package size={44} className="opacity-50" />
-              <h3 className="text-base font-bold text-text-secondary">No products yet</h3>
-              <p className="text-sm">Create your first product to get started</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-glass-border bg-glass/5">
-              <table className="min-w-full divide-y divide-glass-border text-sm text-left">
-                <thead className="bg-bg-tertiary/70 text-[11px] font-bold text-text-muted uppercase tracking-wider">
-                  <tr>
-                    <th className="px-6 py-4">Product</th>
-                    <th className="px-6 py-4">Category</th>
-                    <th className="px-6 py-4">Price</th>
-                    <th className="px-6 py-4">Rating</th>
-                    <th className="px-6 py-4">Stock</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-glass-border/40">
-                  {products.map((p) => {
-                    const meta = STATUS_META[p.status] || STATUS_META.DRAFT;
-                    const avgRating = p.reviews?.length
-                      ? (p.reviews.reduce((s, r) => s + r.rating, 0) / p.reviews.length).toFixed(1)
-                      : null;
-                    return (
-                      <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="font-semibold text-text-primary">{p.name}</div>
-                            {p.brand && <div className="text-xs text-text-muted mt-0.5">{p.brand}</div>}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-text-secondary">{p.category?.name || '—'}</td>
-                        <td className="px-6 py-4 font-bold text-text-primary">₹{parseFloat(p.price).toFixed(2)}</td>
-                        <td className="px-6 py-4">
-                          {avgRating ? (
-                            <span className="flex items-center gap-1 text-xs font-bold text-accent-warning">
-                              <Star size={12} fill="currentColor" /> {avgRating}
-                              <span className="text-[10px] text-text-muted font-normal">({p.reviews.length})</span>
+        {/* Tab 1: Products list */}
+        {activeTab === 'products' && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-bold text-text-primary">My Products Catalog</h2>
+            {loading ? (
+              <p className="text-sm text-text-muted">Loading products…</p>
+            ) : products.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-16 border border-glass-border rounded-xl bg-glass/5 text-text-muted">
+                <Package size={44} className="opacity-50" />
+                <h3 className="text-base font-bold text-text-secondary">No products yet</h3>
+                <p className="text-sm">Create your first product to get started</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-glass-border bg-glass/5">
+                <table className="min-w-full divide-y divide-glass-border text-sm text-left">
+                  <thead className="bg-bg-tertiary/70 text-[11px] font-bold text-text-muted uppercase tracking-wider">
+                    <tr>
+                      <th className="px-6 py-4">Product</th>
+                      <th className="px-6 py-4">Category</th>
+                      <th className="px-6 py-4">Price</th>
+                      <th className="px-6 py-4">Rating</th>
+                      <th className="px-6 py-4">Stock</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-glass-border/40">
+                    {products.map((p) => {
+                      const meta = STATUS_META[p.status] || STATUS_META.DRAFT;
+                      const avgRating = p.reviews?.length
+                        ? (p.reviews.reduce((s, r) => s + r.rating, 0) / p.reviews.length).toFixed(1)
+                        : null;
+                      return (
+                        <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="font-semibold text-text-primary">{p.name}</div>
+                              {p.brand && <div className="text-xs text-text-muted mt-0.5">{p.brand}</div>}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-text-secondary">{p.category?.name || '—'}</td>
+                          <td className="px-6 py-4 font-bold text-text-primary">₹{parseFloat(p.price).toFixed(2)}</td>
+                          <td className="px-6 py-4">
+                            {avgRating ? (
+                              <span className="flex items-center gap-1 text-xs font-bold text-accent-warning">
+                                <Star size={12} fill="currentColor" /> {avgRating}
+                                <span className="text-[10px] text-text-muted font-normal">({p.reviews.length})</span>
+                              </span>
+                            ) : (
+                              <span className="text-xs text-text-muted">No ratings</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-text-secondary">{p.stockQuantity}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${meta.cls}`}>
+                              <meta.Icon size={11} /> {meta.label}
                             </span>
-                          ) : (
-                            <span className="text-xs text-text-muted">No ratings</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-text-secondary">{p.stockQuantity}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${meta.cls}`}>
-                            <meta.Icon size={11} /> {meta.label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {(p.status === 'DRAFT' || p.status === 'REJECTED') && (
-                              <button
-                                className="inline-flex items-center gap-1.5 bg-accent-primary hover:bg-accent-primary-hover text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm shadow-accent-primary/10 hover:shadow-accent-primary/20"
-                                onClick={() => handleEdit(p)}
-                              >
-                                <Edit size={11} />
-                                <span>Edit</span>
-                              </button>
-                            )}
-                            {(p.status === 'DRAFT' || p.status === 'REJECTED') && (
-                              <button
-                                className="inline-flex items-center gap-1.5 bg-accent-secondary hover:bg-accent-secondary-hover text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm shadow-accent-secondary/10 hover:shadow-accent-secondary/20"
-                                onClick={() => handleSubmit(p.id)}
-                              >
-                                <Send size={11} />
-                                <span>Submit</span>
-                              </button>
-                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {(p.status === 'DRAFT' || p.status === 'REJECTED') && (
+                                <button
+                                  className="inline-flex items-center gap-1.5 bg-accent-primary hover:bg-accent-primary-hover text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm shadow-accent-primary/10 hover:shadow-accent-primary/20"
+                                  onClick={() => handleEdit(p)}
+                                >
+                                  <Edit size={11} />
+                                  <span>Edit</span>
+                                </button>
+                              )}
+                              {(p.status === 'DRAFT' || p.status === 'REJECTED') && (
+                                <button
+                                  className="inline-flex items-center gap-1.5 bg-accent-secondary hover:bg-accent-secondary-hover text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm shadow-accent-secondary/10 hover:shadow-accent-secondary/20"
+                                  onClick={() => handleSubmit(p.id)}
+                                >
+                                  <Send size={11} />
+                                  <span>Submit</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Vendor Orders List */}
+        {activeTab === 'orders' && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-bold text-text-primary">Orders Fulfillment & Shipment Tracking</h2>
+            {vendorOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-16 border border-glass-border rounded-xl bg-glass/5 text-text-muted">
+                <ShoppingBag size={44} className="opacity-50 text-accent-primary" />
+                <h3 className="text-base font-bold text-text-secondary">No customer orders yet</h3>
+                <p className="text-sm">When customers purchase your products, orders will appear here for fulfillment.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-6">
+                {vendorOrders.map((order) => {
+                  const currentStatus = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
+                  const dateStr = order.orderDate
+                    ? new Date(order.orderDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                    : 'Recent';
+                  const isExpanded = expandedOrderId === order.id;
+
+                  return (
+                    <div key={order.id} className="rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md overflow-hidden">
+                      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-bg-tertiary/40 border-b border-glass-border/40 text-xs">
+                        <div className="flex gap-6 flex-wrap">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Order ID</span>
+                            <span className="font-mono font-bold text-text-primary">#{order.id?.substring(0, 13)}</span>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Date</span>
+                            <span className="font-semibold text-text-secondary">{dateStr}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Customer</span>
+                            <span className="font-semibold text-text-primary">{order.user?.firstName} {order.user?.lastName} ({order.user?.email})</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Status:</span>
+                            <select
+                              value={currentStatus}
+                              onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                              className="bg-bg-tertiary border border-glass-border rounded-lg text-text-primary text-xs font-bold px-3 py-1.5 outline-none focus:border-accent-primary cursor-pointer"
+                            >
+                              <option value="PLACED">Placed</option>
+                              <option value="PROCESSING">Processing</option>
+                              <option value="SHIPPED">Shipped</option>
+                              <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                              <option value="DELIVERED">Delivered</option>
+                              <option value="CANCELLED">Cancelled</option>
+                            </select>
+                          </div>
+
+                          <button
+                            onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+                            className="inline-flex items-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary border border-accent-primary/25 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Eye size={14} />
+                            <span>{isExpanded ? 'Hide' : 'Track & Details'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Items */}
+                      <div className="p-6 flex flex-col gap-3">
+                        {(order.items || order.orderItems || []).map((item, idx) => (
+                          <div key={item.id || idx} className="flex items-center justify-between gap-4 text-xs pb-3 last:pb-0 border-b border-glass-border/20 last:border-b-0">
+                            <div className="flex items-center gap-3">
+                              <Package size={16} className="text-accent-primary shrink-0" />
+                              <div>
+                                <span className="font-bold text-text-primary">{item.product?.name || item.productName || 'Item'}</span>
+                                <span className="text-[11px] text-text-muted ml-2">Qty {item.quantity}</span>
+                              </div>
+                            </div>
+                            <span className="font-bold text-text-primary">₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Shipping info */}
+                      <div className="px-6 py-3 bg-bg-tertiary/20 border-t border-glass-border/30 text-[11px] text-text-secondary flex items-center gap-2">
+                        <Truck size={14} className="text-accent-primary shrink-0" />
+                        <span>Shipping Address: <strong className="text-text-primary">{order.shippingAddress}</strong></span>
+                      </div>
+
+                      {/* Expanded View */}
+                      {isExpanded && (
+                        <div className="p-6 border-t border-glass-border/50 bg-bg-secondary/40">
+                          <OrderTracker
+                            order={order}
+                            onStatusUpdate={(updated) => {
+                              setVendorOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
+                            }}
+                            isCustomer={false}
+                            userRole="VENDOR"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,23 +4,21 @@ import { Link } from 'react-router-dom';
 import { User, ShoppingBag, CreditCard, ChevronRight, Settings, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { getMyOrders } from '../../api/orders';
+
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const { cartCount, cartSubtotal } = useCart();
   const [orderCount, setOrderCount] = useState(0);
 
   useEffect(() => {
-    try {
-      const savedOrders = localStorage.getItem('orders');
-      if (savedOrders) {
-        setOrderCount(JSON.parse(savedOrders).length);
-      } else {
-        // Default seed count
-        setOrderCount(2);
-      }
-    } catch {
-      setOrderCount(2);
-    }
+    getMyOrders()
+      .then((res) => {
+        setOrderCount(res.data?.length || 0);
+      })
+      .catch(() => {
+        setOrderCount(0);
+      });
   }, []);
 
   return (

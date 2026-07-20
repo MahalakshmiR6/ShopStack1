@@ -1,25 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle } from 'lucide-react';
+import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle, Eye, RefreshCw } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { getMyOrders } from '../../api/orders';
+import OrderTracker from '../../components/orders/OrderTracker';
 
 const STATUS_META = {
-  PENDING:    { label: 'Pending',    cls: 'bg-accent-warning/10 border-accent-warning/20 text-accent-warning' },
-  PROCESSING: { label: 'Processing', cls: 'bg-accent-primary/10 border-accent-primary/20 text-accent-primary' },
-  SHIPPED:    { label: 'Shipped',    cls: 'bg-accent-warning/10 border-accent-warning/20 text-accent-warning' },
-  DELIVERED:  { label: 'Delivered',  cls: 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' },
-  CANCELLED:  { label: 'Cancelled',  cls: 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger' },
+  PLACED:           { label: 'Order Placed',     cls: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
+  PROCESSING:       { label: 'Processing',       cls: 'bg-accent-primary/10 border-accent-primary/20 text-accent-primary' },
+  SHIPPED:          { label: 'Shipped',          cls: 'bg-accent-warning/10 border-accent-warning/20 text-accent-warning' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery',   cls: 'bg-purple-500/10 border-purple-500/20 text-purple-400' },
+  DELIVERED:        { label: 'Delivered',        cls: 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' },
+  CANCELLED:        { label: 'Cancelled',        cls: 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger' },
 };
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('ALL');
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
   const location = useLocation();
 
   const isJustPlaced = location.state?.orderSuccess;
 
-  useEffect(() => {
+  const fetchOrders = () => {
     setLoading(true);
     getMyOrders()
       .then((res) => {
@@ -29,11 +33,35 @@ export default function Orders() {
         setError(err.response?.data?.error || 'Failed to load order history.');
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchOrders();
   }, []);
+
+  const handleStatusUpdate = (updatedOrder) => {
+    setOrders((prev) => prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)));
+  };
+
+  // Filter logic
+  const filteredOrders = orders.filter((order) => {
+    const status = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
+    if (activeTab === 'ACTIVE') {
+      return status !== 'DELIVERED' && status !== 'CANCELLED';
+    }
+    if (activeTab === 'DELIVERED') {
+      return status === 'DELIVERED';
+    }
+    if (activeTab === 'CANCELLED') {
+      return status === 'CANCELLED';
+    }
+    return true;
+  });
 
   if (loading) {
     return (
       <div className="min-h-screen bg-bg-primary text-text-primary py-16 text-center">
+        <div className="w-8 h-8 border-2 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
         <p className="text-sm text-text-muted">Loading your order history…</p>
       </div>
     );
@@ -72,12 +100,41 @@ export default function Orders() {
           </div>
         )}
 
+        {/* Filter Tabs */}
+        <div className="flex gap-2 border-b border-glass-border mb-8 overflow-x-auto pb-1">
+          {[
+            { key: 'ALL', label: 'All Orders', count: orders.length },
+            { key: 'ACTIVE', label: 'In Transit / Active', count: orders.filter((o) => {
+                const s = (o.trackingStatus || o.orderStatus || 'PLACED').toUpperCase();
+                return s !== 'DELIVERED' && s !== 'CANCELLED';
+              }).length 
+            },
+            { key: 'DELIVERED', label: 'Delivered', count: orders.filter((o) => (o.trackingStatus || o.orderStatus) === 'DELIVERED').length },
+            { key: 'CANCELLED', label: 'Cancelled', count: orders.filter((o) => (o.trackingStatus || o.orderStatus) === 'CANCELLED').length },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold transition-all border-b-2 relative -bottom-[1px] cursor-pointer whitespace-nowrap ${
+                activeTab === tab.key
+                  ? 'border-accent-primary text-accent-primary'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className="bg-bg-tertiary px-2 py-0.5 rounded-full text-[10px] text-text-primary">
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-col gap-6">
-          {orders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-4 py-20 border border-glass-border rounded-xl bg-glass/5 text-text-muted">
               <ShoppingBag size={44} className="opacity-50" />
               <h3 className="text-base font-bold text-text-secondary">No orders found</h3>
-              <p className="text-sm">You haven&apos;t placed any orders yet.</p>
+              <p className="text-sm">You have no orders matching this filter.</p>
               <Link 
                 to="/" 
                 className="mt-2 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-md transition-all duration-300"
@@ -86,22 +143,28 @@ export default function Orders() {
               </Link>
             </div>
           ) : (
-            orders.map((order) => {
-              const statusMeta = STATUS_META[order.orderStatus] || STATUS_META.PROCESSING;
+            filteredOrders.map((order) => {
+              const currentStatus = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
+              const statusMeta = STATUS_META[currentStatus] || STATUS_META.PROCESSING;
               const dateStr = order.orderDate
                 ? new Date(order.orderDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                 : 'Recent';
 
+              const isExpanded = expandedOrderId === order.id;
+              const itemsList = order.items || order.orderItems || [];
+              const orderTotal = parseFloat(order.finalAmount || order.totalAmount || 0);
+
               return (
                 <div 
                   key={order.id} 
-                  className="rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md overflow-hidden"
+                  className="rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md overflow-hidden transition-all duration-300 hover:border-glass-border/80"
                 >
+                  {/* Order Card Header */}
                   <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-bg-tertiary/40 border-b border-glass-border/40 text-xs">
                     <div className="flex gap-6 flex-wrap">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Order Reference</span>
-                        <span className="font-mono font-bold text-text-primary text-xs">{order.id?.substring(0, 18)}...</span>
+                        <span className="font-mono font-bold text-text-primary text-xs">#{order.id?.substring(0, 13)}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Date Placed</span>
@@ -109,24 +172,43 @@ export default function Orders() {
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Total Amount</span>
-                        <span className="font-bold text-accent-secondary">₹{parseFloat(order.totalAmount || 0).toFixed(2)}</span>
+                        <span className="font-bold text-accent-secondary">₹{orderTotal.toFixed(2)}</span>
                       </div>
                     </div>
                     
-                    <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${statusMeta.cls}`}>
-                      {statusMeta.label}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full border ${statusMeta.cls}`}>
+                        {statusMeta.label}
+                      </span>
+                      
+                      <Link
+                        to={`/orders/${order.id}/track`}
+                        className="inline-flex items-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 border border-accent-primary/30 text-accent-primary text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Truck size={14} />
+                        <span>Track</span>
+                      </Link>
+
+                      <button
+                        onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+                        className="inline-flex items-center gap-1 bg-bg-tertiary hover:bg-bg-tertiary/80 border border-glass-border text-text-primary text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Eye size={14} />
+                        <span>{isExpanded ? 'Hide Details' : 'View Details'}</span>
+                      </button>
+                    </div>
                   </div>
 
+                  {/* Items summary preview */}
                   <div className="p-6 flex flex-col gap-4">
-                    {order.orderItems?.map((item, idx) => (
+                    {itemsList.map((item, idx) => (
                       <div 
                         key={item.id || idx}
                         className="flex items-center justify-between gap-4 text-xs pb-4 last:pb-0 border-b border-glass-border/20 last:border-b-0"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-bg-tertiary border border-glass-border/40 flex items-center justify-center shrink-0">
-                            <Package size={18} className="text-text-muted" />
+                            <Package size={18} className="text-accent-primary" />
                           </div>
                           <div>
                             <h4 className="font-bold text-text-primary">{item.product?.name || item.productName || 'Marketplace Item'}</h4>
@@ -142,12 +224,25 @@ export default function Orders() {
                     ))}
                   </div>
 
-                  {(order.shippingAddress || order.shippingAddressLine1) && (
+                  {/* Shipping Footer */}
+                  {order.shippingAddress && (
                     <div className="px-6 py-3 bg-bg-tertiary/20 border-t border-glass-border/30 text-[11px] text-text-secondary flex items-center gap-2">
-                      <Truck size={14} className="text-text-muted shrink-0" />
+                      <Truck size={14} className="text-accent-primary shrink-0" />
                       <span className="truncate">
-                        Shipping to: <strong className="text-text-primary">{order.shippingAddress || `${order.shippingAddressLine1}, ${order.city}, ${order.state} - ${order.postalCode}`}</strong>
+                        Shipping to: <strong className="text-text-primary">{order.shippingAddress}</strong>
                       </span>
+                    </div>
+                  )}
+
+                  {/* Inline Expanded Order Tracking View */}
+                  {isExpanded && (
+                    <div className="p-6 border-t border-glass-border/50 bg-bg-secondary/40 animate-in fade-in duration-200">
+                      <OrderTracker 
+                        order={order} 
+                        onStatusUpdate={handleStatusUpdate}
+                        isCustomer={true}
+                        userRole="CUSTOMER"
+                      />
                     </div>
                   )}
 

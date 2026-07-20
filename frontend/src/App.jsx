@@ -15,6 +15,7 @@ import AdminProfile from './pages/admin/AdminProfile';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
+import OrderTrackPage from './pages/customer/OrderTrackPage';
 import Wishlist from './pages/customer/Wishlist';
 import Checkout from './pages/customer/Checkout';
 import Cart from './pages/customer/Cart';
@@ -62,6 +63,7 @@ export default function App() {
                 <Route path="/dashboard" element={<Layout><CustomerDashboard /></Layout>} />
                 <Route path="/profile" element={<Layout><Profile /></Layout>} />
                 <Route path="/orders" element={<Layout><Orders /></Layout>} />
+                <Route path="/orders/:id/track" element={<Layout><OrderTrackPage /></Layout>} />
                 <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
                 <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
               </Route>
