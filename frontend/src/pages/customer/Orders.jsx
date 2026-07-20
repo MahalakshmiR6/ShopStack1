@@ -3,6 +3,7 @@ import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle, Ey
 import { Link, useLocation } from 'react-router-dom';
 import { getMyOrders } from '../../api/orders';
 import OrderTracker from '../../components/orders/OrderTracker';
+import OrderSuccessModal from '../../components/orders/OrderSuccessModal';
 
 const STATUS_META = {
   PLACED:           { label: 'Order Placed',     cls: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
@@ -22,6 +23,7 @@ export default function Orders() {
   const location = useLocation();
 
   const isJustPlaced = location.state?.orderSuccess;
+  const [showSuccessModal, setShowSuccessModal] = useState(Boolean(isJustPlaced));
 
   const fetchOrders = () => {
     setLoading(true);
@@ -253,6 +255,17 @@ export default function Orders() {
         </div>
 
       </div>
+
+      {/* Animated Order Success Modal Popup */}
+      {showSuccessModal && orders.length > 0 && (
+        <OrderSuccessModal
+          order={orders[0]}
+          onClose={() => setShowSuccessModal(false)}
+          onTrackOrder={(ord) => {
+            setExpandedOrderId(ord.id);
+          }}
+        />
+      )}
     </div>
   );
 }
