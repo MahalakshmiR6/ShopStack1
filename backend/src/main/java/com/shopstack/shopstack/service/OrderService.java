@@ -176,11 +176,27 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if (!order.getUser().getId().equals(user.getId())) {
+        boolean isOwner = order.getUser().getId().equals(user.getId());
+        boolean isAdmin = user.getRole() == com.shopstack.shopstack.model.Role.ADMIN;
+        boolean isVendor = isVendorForOrder(order, user);
+
+        if (!isOwner && !isAdmin && !isVendor) {
             throw new RuntimeException("Access denied");
         }
 
         return order;
+    }
+
+    private boolean isVendorForOrder(Order order, User user) {
+        if (user == null || user.getRole() != com.shopstack.shopstack.model.Role.VENDOR) {
+            return false;
+        }
+        if (order.getItems() == null) return false;
+        return order.getItems().stream()
+                .anyMatch(item -> item.getProduct() != null
+                        && item.getProduct().getVendor() != null
+                        && item.getProduct().getVendor().getUser() != null
+                        && item.getProduct().getVendor().getUser().getId().equals(user.getId()));
     }
 
     public Order updateOrderStatus(java.util.UUID orderId, String status, User user) {
@@ -188,7 +204,27 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        order.setTrackingStatus(status);
+        boolean isOwner = order.getUser().getId().equals(user.getId());
+        boolean isAdmin = user.getRole() == com.shopstack.shopstack.model.Role.ADMIN;
+        boolean isVendor = isVendorForOrder(order, user);
+
+        if (!isOwner && !isAdmin && !isVendor) {
+            throw new RuntimeException("Access denied to update order status");
+        }
+
+        String uppercaseStatus = status.trim().toUpperCase();
+
+        if ("CANCELLED".equals(uppercaseStatus)) {
+            if (isOwner && !isAdmin && !isVendor) {
+                if ("SHIPPED".equalsIgnoreCase(order.getTrackingStatus()) ||
+                    "OUT_FOR_DELIVERY".equalsIgnoreCase(order.getTrackingStatus()) ||
+                    "DELIVERED".equalsIgnoreCase(order.getTrackingStatus())) {
+                    throw new RuntimeException("Orders that are already shipped or delivered cannot be cancelled.");
+                }
+            }
+        }
+
+        order.setTrackingStatus(uppercaseStatus);
 
         return orderRepository.save(order);
     }
