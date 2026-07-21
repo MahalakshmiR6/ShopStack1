@@ -25,9 +25,18 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    const cleanEmail = form.email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError('Please enter a valid email address (e.g. user@example.com).');
+      return;
+    }
+
     setLoading(true);
     try {
-      await register(form);
+      const registrationData = { ...form, email: cleanEmail };
+      await register(registrationData);
       setSuccess('Account created! You can now sign in.');
       setTimeout(() => navigate('/login'), 1800);
     } catch (err) {

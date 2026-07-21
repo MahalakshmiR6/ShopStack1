@@ -279,6 +279,7 @@ public class OrderService {
             }
         }
 
+        //shipping fee
         BigDecimal shippingFee = (subtotal.compareTo(new BigDecimal("1000")) > 0 || subtotal.compareTo(BigDecimal.ZERO) == 0)
                 ? BigDecimal.ZERO
                 : new BigDecimal("99");

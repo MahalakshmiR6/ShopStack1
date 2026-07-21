@@ -19,9 +19,17 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const cleanEmail = form.email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError('Please enter a valid email address (e.g. user@example.com).');
+      return;
+    }
+
     setLoading(true);
     try {
-      const user = await login(form.email, form.password);
+      const user = await login(cleanEmail, form.password);
       switch (user.role) {
         case 'ADMIN':    navigate('/admin');   break;
         case 'VENDOR':   navigate('/vendor');  break;
