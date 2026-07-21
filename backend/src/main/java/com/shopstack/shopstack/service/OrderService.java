@@ -86,7 +86,14 @@ public class OrderService {
             }
         }
 
-        finalAmount = subtotal.subtract(discount);
+        BigDecimal shippingFee = (subtotal.compareTo(new BigDecimal("1000")) > 0 || subtotal.compareTo(BigDecimal.ZERO) == 0)
+                ? BigDecimal.ZERO
+                : new BigDecimal("99");
+
+        finalAmount = subtotal.subtract(discount).add(shippingFee);
+        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            finalAmount = BigDecimal.ZERO;
+        }
 
         String transactionId;
 
@@ -272,7 +279,12 @@ public class OrderService {
             }
         }
 
-        return subtotal.subtract(discount);
+        BigDecimal shippingFee = (subtotal.compareTo(new BigDecimal("1000")) > 0 || subtotal.compareTo(BigDecimal.ZERO) == 0)
+                ? BigDecimal.ZERO
+                : new BigDecimal("99");
+
+        BigDecimal finalAmount = subtotal.subtract(discount).add(shippingFee);
+        return finalAmount.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : finalAmount;
     }
 
 }
