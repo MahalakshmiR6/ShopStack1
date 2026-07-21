@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { validateCoupon, checkoutOrder, createPaymentSession } from '../../api/orders';
 import {
@@ -25,9 +25,21 @@ import {
 } from 'lucide-react';
 
 export default function Checkout() {
-  const { cartItems, cartSubtotal, clearCart } = useCart();
-  const navigate = useNavigate();
+  const {
+    cartItems,
+    cartSubtotal,
+    removePurchasedItems
+  } = useCart();
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+const selectedItems = location.state?.selectedItems || [];
+
+const checkoutItems =
+  selectedItems.length > 0
+    ? cartItems.filter(item => selectedItems.includes(item.product.id))
+    : cartItems;
   // Form state
   const [form, setForm] = useState({
     streetAddress: '',
@@ -89,9 +101,23 @@ export default function Checkout() {
     }
   };
 
-  const discountAmount = calculateDiscount();
-  const shippingFee = cartSubtotal > 1000 ? 0 : 99;
-  const finalTotal = Math.max(0, cartSubtotal - discountAmount + shippingFee);
+  const checkoutSubtotal = checkoutItems.reduce(
+  (total, item) => total + parseFloat(item.product.price) * item.quantity,
+  0
+);
+
+const discountAmount = appliedCoupon
+  ? appliedCoupon.discountType === 'PERCENTAGE'
+    ? (checkoutSubtotal * parseFloat(appliedCoupon.discountValue)) / 100
+    : Math.min(checkoutSubtotal, parseFloat(appliedCoupon.discountValue))
+  : 0;
+
+const shippingFee = checkoutSubtotal > 1000 ? 0 : 99;
+
+const finalTotal = Math.max(
+  0,
+  checkoutSubtotal - discountAmount + shippingFee
+);
 
   const handleApplyCoupon = async (e) => {
     e.preventDefault();
@@ -130,7 +156,7 @@ export default function Checkout() {
       ? `Method: ${onlineMethod}, GST: ${form.gstNumber || 'N/A'}, Billing Name: ${form.billingName || 'Same as Shipping'}`
       : 'COD';
 
-    const itemsPayload = cartItems.map((item) => ({
+    const itemsPayload = checkoutItems.map((item) => ({
       productId: item.product.id,
       quantity: item.quantity,
       price: parseFloat(item.product.price),
@@ -184,7 +210,9 @@ export default function Checkout() {
               };
 
               await checkoutOrder(finalPayload);
-              clearCart();
+              removePurchasedItems(
+  checkoutItems.map(item => item.product.id)
+);
               navigate('/orders', { state: { orderSuccess: true } });
             } catch (err) {
               setError(err.response?.data?.error || 'Payment verification failed. Please contact support.');
@@ -227,7 +255,9 @@ export default function Checkout() {
         };
 
         await checkoutOrder(checkoutPayload);
-        clearCart();
+        removePurchasedItems(
+  checkoutItems.map(item => item.product.id)
+);
         navigate('/orders', { state: { orderSuccess: true } });
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to place order. Please try again.');
@@ -411,12 +441,12 @@ export default function Checkout() {
 
             <div className="p-6 rounded-2xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-4">
               <h3 className="text-base font-bold text-text-primary pb-3 border-b border-glass-border">
-                Order Summary ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})
+                Order Summary ({checkoutItems.length} {checkoutItems.length === 1 ? 'item' : 'items'})
               </h3>
 
               {/* Items preview list */}
               <div className="flex flex-col gap-3 max-h-56 overflow-y-auto pr-1">
-                {cartItems.map((item) => (
+                {checkoutItems.map((item) => (
                   <div key={item.product.id} className="flex justify-between items-center text-xs">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-8 h-8 rounded bg-bg-tertiary flex items-center justify-center shrink-0 border border-glass-border">
@@ -478,7 +508,7 @@ export default function Checkout() {
               <div className="pt-4 border-t border-glass-border flex flex-col gap-2.5 text-xs">
                 <div className="flex justify-between text-text-secondary">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-text-primary">₹{cartSubtotal.toFixed(2)}</span>
+                  <span className="font-semibold text-text-primary">₹{checkoutSubtotal.toFixed(2)}</span>
                 </div>
 
                 {appliedCoupon && (

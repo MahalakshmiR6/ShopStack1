@@ -51,6 +51,14 @@ export function CartProvider({ children }) {
     setCartItems((prevItems) => prevItems.filter((item) => item.product.id !== productId));
   };
 
+
+  const removePurchasedItems = (productIds) => {
+  setCartItems((prevItems) =>
+    prevItems.filter((item) => !productIds.includes(item.product.id))
+  );
+};
+
+
   const clearCart = () => {
     setCartItems([]);
   };
@@ -59,7 +67,18 @@ export function CartProvider({ children }) {
   const cartSubtotal = cartItems.reduce((total, item) => total + (parseFloat(item.product.price) * item.quantity), 0);
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, updateQuantity, removeFromCart, clearCart, cartCount, cartSubtotal }}>
+    <CartContext.Provider
+  value={{
+    cartItems,
+    addToCart,
+    updateQuantity,
+    removeFromCart,
+    removePurchasedItems,
+    clearCart,
+    cartCount,
+    cartSubtotal
+  }}
+>
       {children}
     </CartContext.Provider>
   );

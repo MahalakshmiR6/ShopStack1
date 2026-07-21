@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -19,14 +20,31 @@ export default function Cart() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const shippingFee = cartSubtotal > 1000 || cartSubtotal === 0 ? 0 : 99;
-  const grandTotal = cartSubtotal + shippingFee;
+  const [selectedItems, setSelectedItems] = useState(
+  cartItems.map(item => item.product.id)
+);
+  const selectedCartItems = cartItems.filter(item =>
+    selectedItems.includes(item.product.id)
+);
+
+const selectedSubtotal = selectedCartItems.reduce(
+    (total, item) => total + parseFloat(item.product.price) * item.quantity,
+    0
+);
+  const shippingFee =
+  selectedSubtotal > 1000 || selectedSubtotal === 0 ? 0 : 99;
+
+const grandTotal = selectedSubtotal + shippingFee;
 
   const handleCheckoutClick = () => {
     if (!user) {
       navigate('/login');
     } else {
-      navigate('/checkout');
+      navigate('/checkout', {
+    state: {
+        selectedItems
+    }
+});
     }
   };
 
@@ -104,6 +122,18 @@ export default function Cart() {
                     >
                       {/* Product Thumbnail & Details */}
                       <div className="flex items-center gap-4 min-w-0">
+                        <input
+    type="checkbox"
+    checked={selectedItems.includes(product.id)}
+    onChange={() => {
+      if (selectedItems.includes(product.id)) {
+        setSelectedItems(selectedItems.filter(id => id !== product.id));
+      } else {
+        setSelectedItems([...selectedItems, product.id]);
+      }
+    }}
+    className="w-5 h-5 cursor-pointer"
+  />
                         <div className="w-20 h-20 rounded-xl bg-bg-tertiary border border-glass-border overflow-hidden shrink-0 flex items-center justify-center">
                           {primaryImage ? (
                             <img src={primaryImage} alt={product.name} className="w-full h-full object-cover" />
@@ -196,8 +226,12 @@ export default function Cart() {
 
               <div className="flex flex-col gap-3 text-sm">
                 <div className="flex justify-between text-text-secondary">
-                  <span>Subtotal ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
-                  <span className="font-semibold text-text-primary">₹{cartSubtotal.toFixed(2)}</span>
+                  <span>Subtotal (
+  {selectedCartItems.length}
+  {' '}
+  {selectedCartItems.length === 1 ? 'item' : 'items'}
+)</span>
+                  <span className="font-semibold text-text-primary">₹{selectedSubtotal.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between text-text-secondary">
@@ -214,9 +248,9 @@ export default function Cart() {
                   </span>
                 </div>
 
-                {cartSubtotal < 1000 && (
+                {selectedSubtotal < 1000 && (
                   <p className="text-[11px] text-accent-warning font-semibold bg-accent-warning/10 p-2.5 rounded-lg border border-accent-warning/20">
-                    💡 Add ₹{(1000 - cartSubtotal).toFixed(2)} more of products to get <strong>FREE Shipping</strong>!
+                    💡 Add ₹{(1000 - selectedSubtotal).toFixed(2)} more of products to get <strong>FREE Shipping</strong>!
                   </p>
                 )}
 
