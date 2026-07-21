@@ -20,6 +20,9 @@ export const createProduct = (data, categoryId) =>
 export const updateProduct = (id, data, categoryId) =>
   api.put(`/api/vendor/products/${id}`, data, { params: { categoryId } });
 
+export const deleteProduct = (id) =>
+  api.delete(`/api/vendor/products/${id}`);
+
 export const submitProductForApproval = (id) =>
   api.post(`/api/vendor/products/${id}/submit`);
 

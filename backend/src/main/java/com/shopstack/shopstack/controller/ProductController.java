@@ -201,4 +201,26 @@ public class ProductController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @DeleteMapping("/api/vendor/products/{id}")
+    public ResponseEntity<?> deleteVendorProduct(@PathVariable("id") UUID id) {
+        try {
+            User user = getCurrentUser();
+            productService.deleteProduct(user.getId(), user.getRole(), id);
+            return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/api/admin/products/{id}")
+    public ResponseEntity<?> deleteAdminProduct(@PathVariable("id") UUID id) {
+        try {
+            User user = getCurrentUser();
+            productService.deleteProduct(user.getId(), user.getRole(), id);
+            return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

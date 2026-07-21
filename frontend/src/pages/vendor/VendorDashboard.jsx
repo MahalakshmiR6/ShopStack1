@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getVendorProducts, createProduct, updateProduct, submitProductForApproval, getCategories } from '../../api/products';
+import { getVendorProducts, createProduct, updateProduct, deleteProduct, submitProductForApproval, getCategories } from '../../api/products';
 import { getVendorProfile } from '../../api/vendors';
 import { getVendorOrders, updateOrderStatus } from '../../api/orders';
 import { uploadProductImage } from '../../api/upload';
-import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers } from 'lucide-react';
+import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers, Trash2 } from 'lucide-react';
 import OrderTracker from '../../components/orders/OrderTracker';
 import InventoryManager from '../../components/inventory/InventoryManager';
 
@@ -138,6 +138,16 @@ export default function VendorDashboard() {
     setShowForm(false);
     setForm(EMPTY_FORM);
     setEditingProductId(null);
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await deleteProduct(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete product.');
+    }
   };
 
   const handleStatusUpdate = async (orderId, newStatus) => {
@@ -429,6 +439,14 @@ export default function VendorDashboard() {
                                   <span>Submit</span>
                                 </button>
                               )}
+                              <button
+                                className="inline-flex items-center gap-1.5 bg-accent-danger/10 hover:bg-accent-danger border border-accent-danger/30 text-accent-danger hover:text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer"
+                                onClick={() => handleDeleteProduct(p.id)}
+                                title="Delete product"
+                              >
+                                <Trash2 size={11} />
+                                <span>Delete</span>
+                              </button>
                             </div>
                           </td>
                         </tr>

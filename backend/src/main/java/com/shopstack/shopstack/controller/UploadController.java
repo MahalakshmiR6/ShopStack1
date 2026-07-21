@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -53,9 +54,11 @@ public class UploadController {
             String newFilename = UUID.randomUUID().toString() + extension;
             Path destination = uploadDir.resolve(newFilename);
             Files.copy(file.getInputStream(), destination);
+            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/api/upload/files/")
+                .path(newFilename)
+                .toUriString();
 
-            // Return full url
-            String fileUrl = "http://localhost:8082/api/upload/files/" + newFilename;
             return ResponseEntity.ok(Map.of("imageUrl", fileUrl));
 
         } catch (Exception e) {

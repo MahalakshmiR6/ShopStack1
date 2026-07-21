@@ -223,4 +223,21 @@ public class ProductService {
 
         return reviewRepository.save(review);
     }
+
+    @Transactional
+    public void deleteProduct(UUID userId, Role role, UUID productId) {
+        Product existing = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found!"));
+
+        boolean isAdmin = role == Role.ADMIN;
+        boolean isOwnerVendor = existing.getVendor() != null &&
+                existing.getVendor().getUser() != null &&
+                existing.getVendor().getUser().getId().equals(userId);
+
+        if (!isAdmin && !isOwnerVendor) {
+            throw new SecurityException("Unauthorized: You cannot delete this product!");
+        }
+
+        productRepository.delete(existing);
+    }
 }
