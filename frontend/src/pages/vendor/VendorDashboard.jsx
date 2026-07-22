@@ -14,7 +14,28 @@ const STATUS_META = {
   APPROVED:         { label: 'Approved',         cls: 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary', Icon: CheckCircle },
   REJECTED:         { label: 'Rejected',         cls: 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger',  Icon: XCircle },
 };
-
+const FULFILLMENT_STEPS = {
+  PLACED: {
+    nextStatus: 'PROCESSING',
+    label: 'Start fulfillment',
+    helper: 'Confirm items, verify stock, and begin packing the order.'
+  },
+  PROCESSING: {
+    nextStatus: 'SHIPPED',
+    label: 'Pack order and prepare for shipment',
+    helper: 'Securely pack the products and attach shipment details.'
+  },
+  SHIPPED: {
+    nextStatus: 'OUT_FOR_DELIVERY',
+    label: 'Dispatch to delivery partner',
+    helper: 'Send the parcel to the courier for final delivery.'
+  },
+  OUT_FOR_DELIVERY: {
+    nextStatus: 'DELIVERED',
+    label: 'Confirm delivery complete',
+    helper: 'Mark the order as delivered once the customer receives it.'
+  }
+};
 const EMPTY_FORM = {
   name: '', brand: '', description: '', price: '', stockQuantity: '', categoryId: '', imageUrl: '',
 };
@@ -492,7 +513,12 @@ export default function VendorDashboard() {
                           </div>
                           <div className="flex flex-col gap-0.5">
                             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Customer</span>
-                            <span className="font-semibold text-text-primary">{order.user?.firstName} {order.user?.lastName} ({order.user?.email})</span>
+                            <span className="font-semibold text-text-primary">{order.user?.firstName} {order.user?.lastName}</span>
+                            <span className="text-[10px] text-text-muted">{order.user?.email}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5 max-w-[22rem]">
+                            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Delivery Address</span>
+                            <span className="font-semibold text-text-secondary truncate">{order.shippingAddress || 'Not provided'}</span>
                           </div>
                         </div>
 
