@@ -339,24 +339,7 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
               </button>
             )}
 
-            {canVendorOrAdminUpdate && (
-              <div className="flex items-center gap-2">
-                <select
-                  value={currentStatus}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  disabled={updating}
-                  className="bg-bg-tertiary border border-glass-border rounded-lg text-text-primary text-xs font-semibold px-3 py-2 outline-none focus:border-accent-primary cursor-pointer disabled:opacity-50"
-                >
-                  <option value="PLACED">Placed</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="SHIPPED">Shipped</option>
-                  <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                  <option value="DELIVERED">Delivered</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-                {updating && <span className="text-xs text-text-muted">Updating…</span>}
-              </div>
-            )}
+           
           </div>
         </div>
       )}

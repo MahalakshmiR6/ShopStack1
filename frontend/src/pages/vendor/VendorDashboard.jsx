@@ -14,6 +14,7 @@ const STATUS_META = {
   APPROVED:         { label: 'Approved',         cls: 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary', Icon: CheckCircle },
   REJECTED:         { label: 'Rejected',         cls: 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger',  Icon: XCircle },
 };
+
 const FULFILLMENT_STEPS = {
   PLACED: {
     nextStatus: 'PROCESSING',
@@ -34,6 +35,30 @@ const FULFILLMENT_STEPS = {
     nextStatus: 'DELIVERED',
     label: 'Confirm delivery complete',
     helper: 'Mark the order as delivered once the customer receives it.'
+  }
+};
+const getAllowedStatuses = (currentStatus) => {
+  switch (currentStatus) {
+    case "PLACED":
+      return ["PLACED", "PROCESSING", "CANCELLED"];
+
+    case "PROCESSING":
+      return ["PROCESSING", "SHIPPED", "CANCELLED"];
+
+    case "SHIPPED":
+      return ["SHIPPED", "OUT_FOR_DELIVERY"];
+
+    case "OUT_FOR_DELIVERY":
+      return ["OUT_FOR_DELIVERY", "DELIVERED"];
+
+    case "DELIVERED":
+      return ["DELIVERED"];
+
+    case "CANCELLED":
+      return ["CANCELLED"];
+
+    default:
+      return ["PLACED"];
   }
 };
 const EMPTY_FORM = {
@@ -526,17 +551,19 @@ export default function VendorDashboard() {
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Status:</span>
                             <select
-                              value={currentStatus}
-                              onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                              className="bg-bg-tertiary border border-glass-border rounded-lg text-text-primary text-xs font-bold px-3 py-1.5 outline-none focus:border-accent-primary cursor-pointer"
-                            >
-                              <option value="PLACED">Placed</option>
-                              <option value="PROCESSING">Processing</option>
-                              <option value="SHIPPED">Shipped</option>
-                              <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                              <option value="DELIVERED">Delivered</option>
-                              <option value="CANCELLED">Cancelled</option>
-                            </select>
+  value={currentStatus}
+  onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+  className="bg-bg-tertiary border border-glass-border rounded-lg text-text-primary text-xs font-bold px-3 py-1.5 outline-none focus:border-accent-primary cursor-pointer"
+>
+  {getAllowedStatuses(currentStatus).map((status) => (
+    <option key={status} value={status}>
+      {status
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase())}
+    </option>
+  ))}
+</select>
                           </div>
 
                           <button
